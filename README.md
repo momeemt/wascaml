@@ -1,2 +1,2 @@
 # wascaml
-Ocaml WebAssembly toolings
+OCaml WebAssembly toolings
