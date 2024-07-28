@@ -1,0 +1,3 @@
+(library
+ (name compiler)
+ (public_name wascaml.compiler))
