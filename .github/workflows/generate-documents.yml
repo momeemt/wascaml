@@ -18,14 +18,14 @@ jobs:
         with:
           name: wascaml
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
-      - run: nix profile install nixpkgs#nodejs nixpkgs#dune_3 "nixpkgs#ocamlPackages.odoc"
+      - run: nix profile install nixpkgs#nodejs
       - name: build documents
         run: |
-          dune build @doc
+          nix build ".#docs"
       - uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./_build/default/_doc/_html
+          publish_dir: ./result/share/doc
           destination_dir: .
           keep_files: true
 

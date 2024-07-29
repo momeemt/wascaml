@@ -53,6 +53,24 @@
             ocamlPackages.alcotest
           ];
         };
+        packages.docs = pkgs.stdenv.mkDerivation {
+          pname = "generate-dune-documents";
+          version = "0.1.0";
+          src = ./.;
+          buildInputs = with pkgs; [
+            ocamlPackages.ocaml
+            ocamlPackages.dune_3
+            ocamlPackages.odoc
+            opam
+          ];
+          buildPhase = ''
+            dune build @doc
+          '';
+          installPhase = ''
+            mkdir -p $out/share/doc
+            cp -r _build/default/_doc/_html/* $out/share/doc
+          '';
+        };
         packages.default = packages.wascaml;
         apps.${system}.default = {
           type = "app";
