@@ -55,7 +55,7 @@
         packages.default = packages.wascaml;
         apps.${system}.default = {
           type = "app";
-          program = "${self.packages.default}/bin/wascaml.app";
+          program = "${self.packages.default}/bin/wascaml";
         };
       }
     );
