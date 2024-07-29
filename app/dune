@@ -1,0 +1,4 @@
+(executable
+ (name app)
+ (public_name wascaml)
+ (modules app))

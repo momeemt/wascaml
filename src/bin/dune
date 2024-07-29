@@ -1,4 +1,0 @@
-(executable
- (name bin)
- (public_name wascaml.bin)
- (modules bin))
