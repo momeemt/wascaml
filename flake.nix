@@ -25,11 +25,12 @@
               opam
               ocamlPackages.ocaml
               ocamlPackages.dune_3
-              ocamlPackages.lsp
+              ocamlPackages.ocaml-lsp
               ocamlPackages.batteries
               ocamlPackages.alcotest
               ocamlPackages.findlib
               ocamlPackages.ocamlformat
+              ocamlPackages.odoc
               wabt
               wasmtime
             ]
