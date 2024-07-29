@@ -17,7 +17,7 @@
         pkgs = import nixpkgs {inherit system;};
         frameworks = pkgs.darwin.apple_sdk.frameworks;
       in rec {
-        devShell = pkgs.mkShell {
+        devShells.default = pkgs.mkShell {
           buildInputs = with pkgs;
             [
               nil
@@ -43,15 +43,25 @@
             eval $(opam env)
           '';
         };
+        checks = {
+          tests = pkgs.ocamlPackages.buildDunePackage {
+            pname = "wascaml";
+            version = "0.1.0";
+            src = ./.;
+            duneVersion = "3";
+            doBuild = false;
+            doCheck = true;
+            checkInputs = with pkgs; [
+              ocamlPackages.alcotest
+            ];
+          };
+        };
         packages.wascaml = pkgs.ocamlPackages.buildDunePackage {
           pname = "wascaml";
           version = "0.1.0";
           src = ./.;
           duneVersion = "3";
-          doCheck = true;
-          checkInputs = with pkgs; [
-            ocamlPackages.alcotest
-          ];
+          doCheck = false;
         };
         packages.docs = pkgs.stdenv.mkDerivation {
           pname = "generate-dune-documents";
