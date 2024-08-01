@@ -1,4 +1,5 @@
 (library
  (name compiler)
  (public_name wascaml.compiler)
- (modules ast))
+ (modules ast codegen)
+ (libraries wascaml.runtime))

@@ -1,10 +1,18 @@
 open Value
 
-type instr = I32Const of value | I32Add | I32Sub | I32Mul | I32DivS
+type instr =
+  | Call of string (* 0x10 *)
+  | I32Const of value (* 0x41 *)
+  | I32Add (* 0x6A *)
+  | I32Sub (* 0x6B *)
+  | I32Mul (* 0x6C *)
+  | I32DivS (* 0x6D *)
+
 and expr = Instr of instr | Block of expr list
 
 let rec string_of_instr instr =
   match instr with
+  | Call name -> Printf.sprintf "call $%s" name
   | I32Const v -> Printf.sprintf "i32.const %s" (string_of_value v)
   | I32Add -> "i32.add"
   | I32Sub -> "i32.sub"
