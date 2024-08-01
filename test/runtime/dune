@@ -1,0 +1,3 @@
+(tests
+  (names value instructions)
+  (libraries alcotest wascaml.runtime))
