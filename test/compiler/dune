@@ -1,0 +1,4 @@
+(tests
+  (names ast)
+  (libraries alcotest wascaml.compiler))
+
