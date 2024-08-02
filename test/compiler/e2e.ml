@@ -15,48 +15,60 @@ let exec_code code test_name =
   let tokens = tokenize code in
   let ast = parse tokens in
   let wat = codegen ast in
-  let filename = find_project_root (Sys.getcwd ()) ^ "/test/compiler/tmp/" ^ test_name ^ ".wat" in
+  let filename =
+    find_project_root (Sys.getcwd ())
+    ^ "/test/compiler/tmp/" ^ test_name ^ ".wat"
+  in
   let out_channel = open_out filename in
   output_string out_channel wat;
   close_out out_channel;
   let run_wasmtime filename =
     let command = Printf.sprintf "wasmtime %s" filename in
-    let exit_status = Unix.system command in
-    match exit_status with
-    | WEXITED code -> code
-    | WSIGNALED _ | WSTOPPED _ -> -1
+    let in_channel = Unix.open_process_in command in
+    let rec read_all_lines acc =
+      try
+        let line = input_line in_channel in
+        read_all_lines (acc ^ line ^ "\n")
+      with End_of_file -> acc
+    in
+    let output = read_all_lines "" in
+    let _ = Unix.close_process_in in_channel in
+    output
   in
   run_wasmtime filename
+
+let int_to_stdout_format n =
+  string_of_int n ^ "\n"
 
 let exec_int32_1 _ =
   let code = "42" in
   let result = exec_code code "int32_1" in
-  Alcotest.(check int) code result 42
+  Alcotest.(check string) code result (int_to_stdout_format 42)
 
 let exec_plus_1 _ =
   let code = "21 + 42" in
   let result = exec_code code "plus_1" in
-  Alcotest.(check int) code result 63
+  Alcotest.(check string) code result (int_to_stdout_format 63)
 
 let exec_minus_1 _ =
   let code = "40 - 15" in
   let result = exec_code code "minus_1" in
-  Alcotest.(check int) code result 25
+  Alcotest.(check string) code result (int_to_stdout_format 25)
 
 let exec_times_1 _ =
   let code = "8 * 5" in
   let result = exec_code code "times_1" in
-  Alcotest.(check int) code result 40
+  Alcotest.(check string) code result (int_to_stdout_format 40)
 
 let exec_div_1 _ =
   let code = "49 / 7" in
   let result = exec_code code "div_1" in
-  Alcotest.(check int) code result 7
+  Alcotest.(check string) code result (int_to_stdout_format 7)
 
 let exec_binops_1 _ =
   let code = "12 + 3 * 5" in
   let result = exec_code code "binops_1" in
-  Alcotest.(check int) code result 27
+  Alcotest.(check string) code result (int_to_stdout_format 27)
 
 let () =
   Alcotest.run "Compiler.e2e"
