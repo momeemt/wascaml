@@ -52,10 +52,8 @@
             doBuild = false;
             doCheck = true;
             checkPhase = ''
-              runHook preCheck
               export HOME=$(pwd)
               dune runtest
-              runHook postCheck
             '';
             checkInputs = with pkgs; [
               ocamlPackages.alcotest
