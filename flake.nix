@@ -51,13 +51,18 @@
             duneVersion = "3";
             doBuild = false;
             doCheck = true;
+            checkPhase = ''
+              runhook preCheck
+              export HOME=$(pwd)
+              dune runtest
+              runhook postCheck
+            '';
             checkInputs = with pkgs; [
               ocamlPackages.alcotest
             ];
             nativeCheckInputs = with pkgs; [
               wasmtime
             ];
-            WASMTIME_HOME = "${toString ./wasmtime_cache}";
           };
         };
         packages.wascaml = pkgs.ocamlPackages.buildDunePackage {
