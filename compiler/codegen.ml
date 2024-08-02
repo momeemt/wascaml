@@ -1,6 +1,7 @@
 open Ast
 open Runtime.Instructions
 open Runtime.Modules
+open Runtime.Wasi
 
 exception CodegenError of string
 
@@ -28,14 +29,7 @@ let codegen ast =
   in
   let module_ =
     {
-      imports =
-        [
-          {
-            module_name = "wasi_snapshot_preview1";
-            name = "proc_exit";
-            desc = FuncImport ("proc_exit", [ I32 ], []);
-          };
-        ];
+      imports = [ proc_exit ];
       exports = [ { name = "_start"; desc = FuncExport "_start" } ];
       funcs = [ start_func ];
       memory = Some { min_pages = 1; max_pages = None };

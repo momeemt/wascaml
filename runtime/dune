@@ -1,4 +1,4 @@
 (library
  (name runtime)
  (public_name wascaml.runtime)
- (modules value instructions modules))
+ (modules value instructions modules wasi))
