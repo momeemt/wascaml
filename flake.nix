@@ -33,7 +33,6 @@
               ocamlPackages.odoc
               wabt
               wasmtime
-              wasmer
             ]
             ++ lib.optional stdenv.isDarwin [
               frameworks.Security
@@ -56,8 +55,9 @@
               ocamlPackages.alcotest
             ];
             nativeCheckInputs = with pkgs; [
-              wasmer
+              wasmtime
             ];
+            WASMTIME_HOME = "${toString ./wasmtime_cache}";
           };
         };
         packages.wascaml = pkgs.ocamlPackages.buildDunePackage {
