@@ -2,6 +2,8 @@ open Ast
 open Runtime.Instructions
 open Runtime.Modules
 
+exception CodegenError of string
+
 let rec codegen_expr expr =
   match expr with
   | IntLit n -> Instr (I32Const (Int32 n))
@@ -13,6 +15,7 @@ let rec codegen_expr expr =
       Block [ codegen_expr left; codegen_expr right; Instr I32Mul ]
   | Div (left, right) ->
       Block [ codegen_expr left; codegen_expr right; Instr I32DivS ]
+  | _ -> raise (CodegenError "unsupported expr")
 
 let codegen ast =
   let start_func =

@@ -1,4 +1,4 @@
 (tests
-  (names ast)
-  (libraries alcotest wascaml.compiler))
+  (names ast e2e)
+  (libraries alcotest wascaml.compiler wascaml.runtime))
 
