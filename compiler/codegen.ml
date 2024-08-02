@@ -9,10 +9,16 @@ exception CodegenError of string
 let rec codegen_expr expr =
   match expr with
   | IntLit n -> [ I32Const n ]
+  | If (cond, then_, else_) ->
+      codegen_expr cond
+      @ [ Runtime.Instructions.If (codegen_expr then_, codegen_expr else_) ]
   | Plus (left, right) -> codegen_expr left @ codegen_expr right @ [ I32Add ]
   | Minus (left, right) -> codegen_expr left @ codegen_expr right @ [ I32Sub ]
   | Times (left, right) -> codegen_expr left @ codegen_expr right @ [ I32Mul ]
   | Div (left, right) -> codegen_expr left @ codegen_expr right @ [ I32DivS ]
+  | Eq (left, right) -> codegen_expr left @ codegen_expr right @ [ I32Eq ]
+  | Greater (left, right) -> codegen_expr left @ codegen_expr right @ [ I32GtU ]
+  | Less (left, right) -> codegen_expr left @ codegen_expr right @ [ I32LtU ]
   | _ -> raise (CodegenError "unsupported expr")
 
 let codegen ast =

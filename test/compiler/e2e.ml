@@ -69,6 +69,26 @@ let exec_binops_1 _ =
   let result = exec_code code "binops_1" in
   Alcotest.(check string) code result (int_to_stdout_format 27)
 
+let exec_if_1 _ =
+  let code = "if 0 = 0 then 1 else 2" in
+  let result = exec_code code "if_1" in
+  Alcotest.(check string) code result (int_to_stdout_format 1)
+
+let exec_if_2 _ =
+  let code = "if 1 = 2 then 3 else 4" in
+  let result = exec_code code "if_2" in
+  Alcotest.(check string) code result (int_to_stdout_format 4)
+
+let exec_if_3 _ =
+  let code = "if 1 < 10 then 20 else 30" in
+  let result = exec_code code "if_3" in
+  Alcotest.(check string) code result (int_to_stdout_format 20)
+
+let exec_if_4 _ =
+  let code = "if 2 > 20 then 40 else 50" in
+  let result = exec_code code "if_4" in
+  Alcotest.(check string) code result (int_to_stdout_format 50)
+
 let () =
   Alcotest.run "Compiler.e2e"
     [
@@ -78,4 +98,12 @@ let () =
       ("8 * 5", [ Alcotest.test_case "8 * 5" `Quick exec_times_1 ]);
       ("49 / 7", [ Alcotest.test_case "49 / 7" `Quick exec_div_1 ]);
       ("12 + 3 * 5", [ Alcotest.test_case "12 + 3 * 5" `Quick exec_binops_1 ]);
+      ( "if 0 = 0 then 1 else 2",
+        [ Alcotest.test_case "if 0 = 0 then 1 else 2" `Quick exec_if_1 ] );
+      ( "if 1 = 2 then 3 else 4",
+        [ Alcotest.test_case "if 1 = 2 then 3 else 4" `Quick exec_if_2 ] );
+      ( "if 1 < 10 then 20 else 30",
+        [ Alcotest.test_case "if 1 < 10 then 20 else 30" `Quick exec_if_3 ] );
+      ( "if 2 > 20 then 40 else 50",
+        [ Alcotest.test_case "if 2 > 20 then 40 else 50" `Quick exec_if_4 ] );
     ]

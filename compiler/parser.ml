@@ -114,7 +114,7 @@ and parse_primary_expr tokens =
       match tokens with
       | RightParen :: tokens -> (expr, tokens)
       | _ -> raise (ParseError "Expected ')'"))
-  | _ -> raise (ParseError "Expected primary expression")
+  | rest -> raise (ParseError ("Expected primary expression: " ^ string_of_tokens rest))
 
 and parse_expr_list tokens =
   let rec aux acc tokens =
@@ -133,6 +133,7 @@ and parse_args acc tokens =
   | _ -> (List.rev acc, tokens)
 
 let parse tokens =
+  Printf.printf "%s" (string_of_tokens tokens);
   let ast, tokens = parse_expr tokens in
   match tokens with
   | [ EOF ] -> ast
