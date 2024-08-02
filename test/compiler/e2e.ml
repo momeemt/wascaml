@@ -20,7 +20,7 @@ let exec_code code test_name =
   output_string out_channel wat;
   close_out out_channel;
   let run_wasmtime filename =
-    let command = Printf.sprintf "wasmtime %s" filename in
+    let command = Printf.sprintf "wasmer %s" filename in
     let exit_status = Unix.system command in
     match exit_status with
     | WEXITED code -> code

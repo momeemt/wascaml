@@ -33,6 +33,7 @@
               ocamlPackages.odoc
               wabt
               wasmtime
+              wasmer
             ]
             ++ lib.optional stdenv.isDarwin [
               frameworks.Security
