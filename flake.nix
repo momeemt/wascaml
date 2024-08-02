@@ -56,7 +56,7 @@
               ocamlPackages.alcotest
             ];
             nativeCheckInputs = with pkgs; [
-              wasmtime
+              wasmer
             ];
           };
         };
