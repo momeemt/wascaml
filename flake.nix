@@ -53,6 +53,8 @@
             doCheck = true;
             checkInputs = with pkgs; [
               ocamlPackages.alcotest
+            ];
+            nativeCheckInputs = with pkgs; [
               wasmtime
             ];
           };
