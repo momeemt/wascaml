@@ -49,8 +49,6 @@ let rec string_of_instr instr =
   | I32DivU -> "i32.div_u"
   | I32RemU -> "i32.rem_u"
 
-and string_of_exprs exprs =
-  String.concat "\n" (List.map string_of_instr exprs)
+and string_of_exprs exprs = String.concat "\n" (List.map string_of_instr exprs)
 
-let string_of_expr expr =
-  string_of_exprs expr
+let string_of_expr expr = string_of_exprs expr

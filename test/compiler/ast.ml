@@ -8,8 +8,8 @@ let test_string_of_ast_int_lit _ =
 
 let test_string_of_ast_plus _ =
   Alcotest.(check string)
-  "string_of_ast (28 + 42)"
-  (Plus (IntLit 28, IntLit 42) |> string_of_ast)
+    "string_of_ast (28 + 42)"
+    (Plus (IntLit 28, IntLit 42) |> string_of_ast)
     "Plus (IntLit (28), IntLit (42))"
 
 let test_string_of_ast_minus _ =

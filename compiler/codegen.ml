@@ -27,16 +27,9 @@ let codegen ast =
   in
   let module_ =
     {
-      imports = [
-        fd_write;
-        proc_exit
-      ];
+      imports = [ fd_write; proc_exit ];
       exports = [ { name = "_start"; desc = FuncExport "_start" } ];
-      funcs = [
-        int32_to_ascii;
-        print_int32;
-        start_func
-      ];
+      funcs = [ int32_to_ascii; print_int32; start_func ];
       memory = Some { min_pages = 1; max_pages = None };
       data =
         [

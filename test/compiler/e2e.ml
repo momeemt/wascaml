@@ -37,8 +37,7 @@ let exec_code code test_name =
   in
   run_wasmtime filename
 
-let int_to_stdout_format n =
-  string_of_int n ^ "\n"
+let int_to_stdout_format n = string_of_int n ^ "\n"
 
 let exec_int32_1 _ =
   let code = "42" in
