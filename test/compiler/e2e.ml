@@ -26,8 +26,7 @@ let exec_code code test_name =
     | WEXITED code -> code
     | WSIGNALED _ | WSTOPPED _ -> -1
   in
-  let _ = run_wasmtime filename in
-  0
+  run_wasmtime filename
 
 let exec_int32_1 _ =
   let code = "42" in
