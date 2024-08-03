@@ -2,7 +2,7 @@ type ast =
   | Let of string * string list * ast * ast
   | LetRec of string * string list * ast * ast
   | Fun of string * ast
-  | App of string * (ast list)
+  | App of string * ast list
   | IntLit of int
   | FloatLit of float
   | StringLit of string
@@ -25,7 +25,10 @@ let rec string_of_ast ast =
       "LetRec (" ^ f ^ ", [" ^ String.concat "; " args ^ "], "
       ^ string_of_ast e1 ^ ", " ^ string_of_ast e2 ^ ")"
   | Fun (id, body) -> "Fun (" ^ id ^ ", " ^ string_of_ast body ^ ")"
-  | App (name, exprs) -> "App (" ^ name ^ ": " ^ ((List.map (fun expr -> string_of_ast expr) exprs) |> String.concat " ") ^ ")"
+  | App (name, exprs) ->
+      "App (" ^ name ^ ": "
+      ^ (List.map (fun expr -> string_of_ast expr) exprs |> String.concat " ")
+      ^ ")"
   | IntLit n -> "IntLit (" ^ string_of_int n ^ ")"
   | FloatLit f -> "FloatLit (" ^ string_of_float f ^ ")"
   | StringLit s -> "StringLit(" ^ s ^ ")"

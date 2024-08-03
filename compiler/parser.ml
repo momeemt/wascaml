@@ -109,14 +109,16 @@ and parse_primary_expr tokens =
       | _ -> raise (ParseError "Expected ')'"))
   | _ -> raise (ParseError "Expected primary expression")
 
-and parse_app tokens : (ast list * (token list)) =
+and parse_app tokens : ast list * token list =
   let rec aux acc tokens =
     match List.hd tokens with
-    | LeftParen | LeftBracket | Int _ | Float _ | String _ | Bool _ | Identifier _ ->
+    | LeftParen | LeftBracket | Int _ | Float _ | String _ | Bool _
+    | Identifier _ ->
         let ast, tokens = parse_expr tokens in
         aux (ast :: acc) tokens
     | _ -> (List.rev acc, tokens)
-  in aux [] tokens
+  in
+  aux [] tokens
 
 and parse_expr_list tokens =
   let rec aux acc tokens =
