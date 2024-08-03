@@ -99,22 +99,24 @@ and parse_primary_expr tokens =
   match tokens with
   | Int n :: tokens -> (IntLit n, tokens)
   | Bool b :: tokens -> (BoolLit b, tokens)
-  | Identifier id :: LeftParen :: tokens -> (
-      let args, tokens = parse_expr_list tokens in
-      match tokens with
-      | RightParen :: tokens ->
-          let rec build_app e args =
-            match args with [] -> e | x :: xs -> build_app (App (e, x)) xs
-          in
-          (build_app (Identifier id) args, tokens)
-      | _ -> raise (ParseError "Expected ')'"))
-  | Identifier id :: tokens -> (Identifier id, tokens)
+  | Identifier id :: tokens ->
+      let args, tokens = parse_app tokens in
+      (App (id, args), tokens)
   | LeftParen :: tokens -> (
       let expr, tokens = parse_expr tokens in
       match tokens with
       | RightParen :: tokens -> (expr, tokens)
       | _ -> raise (ParseError "Expected ')'"))
-  | rest -> raise (ParseError ("Expected primary expression: " ^ string_of_tokens rest))
+  | _ -> raise (ParseError "Expected primary expression")
+
+and parse_app tokens : (ast list * (token list)) =
+  let rec aux acc tokens =
+    match List.hd tokens with
+    | LeftParen | LeftBracket | Int _ | Float _ | String _ | Bool _ | Identifier _ ->
+        let ast, tokens = parse_expr tokens in
+        aux (ast :: acc) tokens
+    | _ -> (List.rev acc, tokens)
+  in aux [] tokens
 
 and parse_expr_list tokens =
   let rec aux acc tokens =
@@ -133,7 +135,6 @@ and parse_args acc tokens =
   | _ -> (List.rev acc, tokens)
 
 let parse tokens =
-  Printf.printf "%s" (string_of_tokens tokens);
   let ast, tokens = parse_expr tokens in
   match tokens with
   | [ EOF ] -> ast

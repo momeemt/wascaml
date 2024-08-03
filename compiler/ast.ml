@@ -2,12 +2,11 @@ type ast =
   | Let of string * string list * ast * ast
   | LetRec of string * string list * ast * ast
   | Fun of string * ast
-  | App of ast * ast
+  | App of string * (ast list)
   | IntLit of int
   | FloatLit of float
   | StringLit of string
   | BoolLit of bool
-  | Identifier of string
   | If of ast * ast * ast
   | Eq of ast * ast
   | Less of ast * ast
@@ -26,12 +25,11 @@ let rec string_of_ast ast =
       "LetRec (" ^ f ^ ", [" ^ String.concat "; " args ^ "], "
       ^ string_of_ast e1 ^ ", " ^ string_of_ast e2 ^ ")"
   | Fun (id, body) -> "Fun (" ^ id ^ ", " ^ string_of_ast body ^ ")"
-  | App (e1, e2) -> "App (" ^ string_of_ast e1 ^ ", " ^ string_of_ast e2 ^ ")"
+  | App (name, exprs) -> "App (" ^ name ^ ": " ^ ((List.map (fun expr -> string_of_ast expr) exprs) |> String.concat " ") ^ ")"
   | IntLit n -> "IntLit (" ^ string_of_int n ^ ")"
   | FloatLit f -> "FloatLit (" ^ string_of_float f ^ ")"
   | StringLit s -> "StringLit(" ^ s ^ ")"
   | BoolLit b -> "BoolLit (" ^ string_of_bool b ^ ")"
-  | Identifier id -> "Identifier (" ^ id ^ ")"
   | If (e1, e2, e3) ->
       "If (" ^ string_of_ast e1 ^ ", " ^ string_of_ast e2 ^ ", "
       ^ string_of_ast e3 ^ ")"

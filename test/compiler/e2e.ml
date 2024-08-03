@@ -60,4 +60,11 @@ let () =
       ("if_4", [ test_case "if_4" "if 2 > 20 then 40 else 50" 50 ]);
       ("let_1", [ test_case "let_1" "let x = 10 in x" 10 ]);
       ("let_2", [ test_case "let_2" "let x = 3 in 2 + x * x" 11 ]);
+      ("let_3", [ test_case "let_3" "let f x = x + x in f 3" 6 ]);
+      ("let_4", [ test_case "let_4" "let f x y = x * y in f 11 13" 143 ]);
+      ( "let_5",
+        [
+          test_case "let_5"
+            "let fact x = if x = 0 then 1 else x * (fact (x - 1)) in fact 5" 120;
+        ] );
     ]

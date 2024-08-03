@@ -52,9 +52,22 @@ let codegen ast =
     | IntLit n ->
         let func = Funcs.find func_name funcs in
         Funcs.add func_name { func with body = [ I32Const n ] } funcs
-    | Identifier x ->
+    | App (name, args) ->
         let func = Funcs.find func_name funcs in
-        Funcs.add func_name { func with body = [ Call x ] } funcs
+        let funcs, args_instrs =
+          List.fold_left
+            (fun (funcs, acc) arg ->
+              let funcs = aux func_name funcs env arg in
+              let arg_instrs = (Funcs.find func_name funcs).body in
+              (funcs, acc @ arg_instrs))
+            (funcs, []) args
+        in
+        let new_func_body =
+          match Funcs.find_opt name funcs with
+          | Some _ -> args_instrs @ [ Call name ]
+          | None -> args_instrs @ [ LocalGet name ]
+        in
+        Funcs.add func_name { func with body = new_func_body } funcs
     | If (cond, then_, else_) -> aux_if cond then_ else_
     | Let (name, params, value, body) -> aux_let name params value body
     | Plus (left, right) -> aux_binops left right I32Add
@@ -64,7 +77,11 @@ let codegen ast =
     | Eq (left, right) -> aux_binops left right I32Eq
     | Greater (left, right) -> aux_binops left right I32GtU
     | Less (left, right) -> aux_binops left right I32LtU
-    | _ -> raise (CodegenError "unsupported expr")
+    | rest ->
+        raise
+          (CodegenError
+             (("unsupported expr\n" ^ string_of_ast rest)
+             ^ "\n" ^ string_of_ast ast))
   in
   let start_func =
     { name = "_start"; params = []; results = []; body = []; locals = [] }
