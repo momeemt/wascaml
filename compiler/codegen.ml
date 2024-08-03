@@ -6,36 +6,86 @@ open Runtime.Wasi
 
 exception CodegenError of string
 
-let rec codegen_expr expr =
-  match expr with
-  | IntLit n -> [ I32Const n ]
-  | If (cond, then_, else_) ->
-      codegen_expr cond
-      @ [ Runtime.Instructions.If (codegen_expr then_, codegen_expr else_) ]
-  | Plus (left, right) -> codegen_expr left @ codegen_expr right @ [ I32Add ]
-  | Minus (left, right) -> codegen_expr left @ codegen_expr right @ [ I32Sub ]
-  | Times (left, right) -> codegen_expr left @ codegen_expr right @ [ I32Mul ]
-  | Div (left, right) -> codegen_expr left @ codegen_expr right @ [ I32DivS ]
-  | Eq (left, right) -> codegen_expr left @ codegen_expr right @ [ I32Eq ]
-  | Greater (left, right) -> codegen_expr left @ codegen_expr right @ [ I32GtU ]
-  | Less (left, right) -> codegen_expr left @ codegen_expr right @ [ I32LtU ]
-  | _ -> raise (CodegenError "unsupported expr")
+module Funcs = Map.Make (String)
+module Env = Map.Make (String)
 
 let codegen ast =
+  let rec aux func_name funcs env expr =
+    let aux_if cond then_ else_ =
+      let cond_funcs = aux func_name funcs env cond in
+      let cond = (Funcs.find func_name cond_funcs).body in
+      let then_funcs = aux func_name cond_funcs env then_ in
+      let then_ = (Funcs.find func_name then_funcs).body in
+      let else_funcs = aux func_name then_funcs env else_ in
+      let func = Funcs.find func_name else_funcs in
+      let else_ = func.body in
+      let new_func_body = cond @ [ Runtime.Instructions.If (then_, else_) ] in
+      let new_func = { func with body = new_func_body } in
+      Funcs.add func_name new_func else_funcs
+    in
+    let aux_binops left right op =
+      let left_funcs = aux func_name funcs env left in
+      let left = (Funcs.find func_name left_funcs).body in
+      let right_funcs = aux func_name left_funcs env right in
+      let func = Funcs.find func_name right_funcs in
+      let right = func.body in
+      let new_func_body = left @ right @ [ op ] in
+      let new_func = { func with body = new_func_body } in
+      Funcs.add func_name new_func right_funcs
+    in
+    let aux_let name params value body =
+      let funcs =
+        Funcs.add name
+          {
+            name;
+            params = List.map (fun param -> (Some param, I32)) params;
+            results = [ I32 ];
+            body = [];
+            locals = [];
+          }
+          funcs
+      in
+      let funcs = aux name funcs env value in
+      aux func_name funcs env body
+    in
+    match expr with
+    | IntLit n ->
+        let func = Funcs.find func_name funcs in
+        Funcs.add func_name { func with body = [ I32Const n ] } funcs
+    | Identifier x ->
+        let func = Funcs.find func_name funcs in
+        Funcs.add func_name { func with body = [ Call x ] } funcs
+    | If (cond, then_, else_) -> aux_if cond then_ else_
+    | Let (name, params, value, body) -> aux_let name params value body
+    | Plus (left, right) -> aux_binops left right I32Add
+    | Minus (left, right) -> aux_binops left right I32Sub
+    | Times (left, right) -> aux_binops left right I32Mul
+    | Div (left, right) -> aux_binops left right I32DivS
+    | Eq (left, right) -> aux_binops left right I32Eq
+    | Greater (left, right) -> aux_binops left right I32GtU
+    | Less (left, right) -> aux_binops left right I32LtU
+    | _ -> raise (CodegenError "unsupported expr")
+  in
   let start_func =
-    {
-      name = "_start";
-      params = [];
-      results = [];
-      body = codegen_expr ast @ [ Call "print_int32" ];
-      locals = [];
-    }
+    { name = "_start"; params = []; results = []; body = []; locals = [] }
+  in
+  let funcs =
+    aux "_start" Funcs.(empty |> add "_start" start_func) Env.empty ast
+  in
+  let funcs =
+    Funcs.map
+      (fun (fn : func) ->
+        if fn.name = "_start" then
+          { fn with body = fn.body @ [ Call "print_int32" ] }
+        else fn)
+      funcs
   in
   let module_ =
     {
       imports = [ fd_write; proc_exit ];
       exports = [ { name = "_start"; desc = FuncExport "_start" } ];
-      funcs = [ int32_to_ascii; print_int32; start_func ];
+      funcs =
+        [ int32_to_ascii; print_int32 ] @ (Funcs.bindings funcs |> List.map snd);
       memory = Some { min_pages = 1; max_pages = None };
       data =
         [

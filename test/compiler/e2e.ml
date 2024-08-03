@@ -37,73 +37,27 @@ let exec_code code test_name =
   in
   run_wasmtime filename
 
-let int_to_stdout_format n = string_of_int n ^ "\n"
+let exec_code_test case_name code expected_result =
+  let result = exec_code code case_name in
+  Alcotest.(check string) code result (string_of_int expected_result ^ "\n")
 
-let exec_int32_1 _ =
-  let code = "42" in
-  let result = exec_code code "int32_1" in
-  Alcotest.(check string) code result (int_to_stdout_format 42)
-
-let exec_plus_1 _ =
-  let code = "21 + 42" in
-  let result = exec_code code "plus_1" in
-  Alcotest.(check string) code result (int_to_stdout_format 63)
-
-let exec_minus_1 _ =
-  let code = "40 - 15" in
-  let result = exec_code code "minus_1" in
-  Alcotest.(check string) code result (int_to_stdout_format 25)
-
-let exec_times_1 _ =
-  let code = "8 * 5" in
-  let result = exec_code code "times_1" in
-  Alcotest.(check string) code result (int_to_stdout_format 40)
-
-let exec_div_1 _ =
-  let code = "49 / 7" in
-  let result = exec_code code "div_1" in
-  Alcotest.(check string) code result (int_to_stdout_format 7)
-
-let exec_binops_1 _ =
-  let code = "12 + 3 * 5" in
-  let result = exec_code code "binops_1" in
-  Alcotest.(check string) code result (int_to_stdout_format 27)
-
-let exec_if_1 _ =
-  let code = "if 0 = 0 then 1 else 2" in
-  let result = exec_code code "if_1" in
-  Alcotest.(check string) code result (int_to_stdout_format 1)
-
-let exec_if_2 _ =
-  let code = "if 1 = 2 then 3 else 4" in
-  let result = exec_code code "if_2" in
-  Alcotest.(check string) code result (int_to_stdout_format 4)
-
-let exec_if_3 _ =
-  let code = "if 1 < 10 then 20 else 30" in
-  let result = exec_code code "if_3" in
-  Alcotest.(check string) code result (int_to_stdout_format 20)
-
-let exec_if_4 _ =
-  let code = "if 2 > 20 then 40 else 50" in
-  let result = exec_code code "if_4" in
-  Alcotest.(check string) code result (int_to_stdout_format 50)
+let test_case name code expected_result =
+  Alcotest.test_case code `Quick (fun _ ->
+      exec_code_test name code expected_result)
 
 let () =
   Alcotest.run "Compiler.e2e"
     [
-      ("42", [ Alcotest.test_case "42" `Quick exec_int32_1 ]);
-      ("21 + 42", [ Alcotest.test_case "21 + 42" `Quick exec_plus_1 ]);
-      ("40 - 15", [ Alcotest.test_case "40 - 15" `Quick exec_minus_1 ]);
-      ("8 * 5", [ Alcotest.test_case "8 * 5" `Quick exec_times_1 ]);
-      ("49 / 7", [ Alcotest.test_case "49 / 7" `Quick exec_div_1 ]);
-      ("12 + 3 * 5", [ Alcotest.test_case "12 + 3 * 5" `Quick exec_binops_1 ]);
-      ( "if 0 = 0 then 1 else 2",
-        [ Alcotest.test_case "if 0 = 0 then 1 else 2" `Quick exec_if_1 ] );
-      ( "if 1 = 2 then 3 else 4",
-        [ Alcotest.test_case "if 1 = 2 then 3 else 4" `Quick exec_if_2 ] );
-      ( "if 1 < 10 then 20 else 30",
-        [ Alcotest.test_case "if 1 < 10 then 20 else 30" `Quick exec_if_3 ] );
-      ( "if 2 > 20 then 40 else 50",
-        [ Alcotest.test_case "if 2 > 20 then 40 else 50" `Quick exec_if_4 ] );
+      ("int32_1", [ test_case "int32_1" "42" 42 ]);
+      ("plus_1", [ test_case "plus_1" "21 + 42" 63 ]);
+      ("minus_1", [ test_case "minus_1" "40 - 15" 25 ]);
+      ("times_1", [ test_case "times_1" "8 * 5" 40 ]);
+      ("div_1", [ test_case "div_1" "49 / 7" 7 ]);
+      ("binops_1", [ test_case "binops_1" "12 + 3 * 5" 27 ]);
+      ("if_1", [ test_case "if_1" "if 0 = 0 then 1 else 2" 1 ]);
+      ("if_2", [ test_case "if_2" "if 1 = 2 then 3 else 4" 4 ]);
+      ("if_3", [ test_case "if_3" "if 1 < 10 then 20 else 30" 20 ]);
+      ("if_4", [ test_case "if_4" "if 2 > 20 then 40 else 50" 50 ]);
+      ("let_1", [ test_case "let_1" "let x = 10 in x" 10 ]);
+      ("let_2", [ test_case "let_2" "let x = 3 in 2 + x * x" 11 ]);
     ]
