@@ -39,7 +39,9 @@ let tokenize input =
       if
         pos < length
         && ((input.[pos] >= 'a' && input.[pos] <= 'z')
-           || (input.[pos] >= 'A' && input.[pos] <= 'Z'))
+           || (input.[pos] >= 'A' && input.[pos] <= 'Z')
+           || (input.[pos] >= '0' && input.[pos] <= '9')
+           || input.[pos] = '_')
       then find_end (pos + 1)
       else pos
     in

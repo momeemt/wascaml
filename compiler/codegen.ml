@@ -48,8 +48,15 @@ let codegen ast =
           }
           funcs
       in
-      let value_funcs_env = List.fold_left (fun env param -> Env.add param (param, Arg) env) env params in
-      let value_funcs_env = if is_rec then Env.add name (rand_name, Func) value_funcs_env else value_funcs_env in
+      let value_funcs_env =
+        List.fold_left
+          (fun env param -> Env.add param (param, Arg) env)
+          env params
+      in
+      let value_funcs_env =
+        if is_rec then Env.add name (rand_name, Func) value_funcs_env
+        else value_funcs_env
+      in
       let funcs = aux rand_name funcs value_funcs_env value in
       aux func_name funcs (Env.add name (rand_name, Func) env) body
     in
@@ -67,7 +74,7 @@ let codegen ast =
               (funcs, acc @ arg_instrs))
             (funcs, []) args
         in
-        let (wat_name, wat_kind) =
+        let wat_name, wat_kind =
           match Env.find_opt name env with
           | Some t -> t
           | None -> raise (CodegenError ("not found identifier: " ^ name))

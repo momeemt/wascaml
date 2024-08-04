@@ -76,6 +76,8 @@ let () =
         [
           test_case "let_8" "let f x = let f x = x * x in f x * (f x) in f 2" 16;
         ] );
+      ("let_9", [ test_case "let_9" "let f1 x1 = x1 * x1 in f1 10" 100 ]);
+      ("let_10", [ test_case "let_10" "let f_1 x_1 = x_1 * x_1 in f_1 10" 100 ]);
       ( "let_rec_1",
         [
           test_case "let_rec_1"
