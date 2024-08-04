@@ -54,7 +54,7 @@ let () =
       ("times_1", [ test_case "times_1" "8 * 5" 40 ]);
       ("div_1", [ test_case "div_1" "49 / 7" 7 ]);
       ("binops_1", [ test_case "binops_1" "12 + 3 * 5" 27 ]);
-      ("if_1", [ test_case "if_1" "if 0 = 0 then 1 else 2" 1 ]);
+      ("if_1", [ test_case "if_1" "if 0 = 0 then 1 else 3" 1 ]);
       ("if_2", [ test_case "if_2" "if 1 = 2 then 3 else 4" 4 ]);
       ("if_3", [ test_case "if_3" "if 1 < 10 then 20 else 30" 20 ]);
       ("if_4", [ test_case "if_4" "if 2 > 20 then 40 else 50" 50 ]);
@@ -63,8 +63,11 @@ let () =
       ("let_3", [ test_case "let_3" "let f x = x + x in f 3" 6 ]);
       ("let_4", [ test_case "let_4" "let f x y = x * y in f 11 13" 143 ]);
       ( "let_5",
+        [ test_case "let_5" "let f x = let g y = y + y in g x in f 3" 6 ] );
+      ( "let_rec_1",
         [
-          test_case "let_5"
-            "let fact x = if x = 0 then 1 else x * (fact (x - 1)) in fact 5" 120;
+          test_case "let_rec_1"
+            "let rec fact x = if x = 0 then 1 else x * (fact (x - 1)) in fact 5"
+            120;
         ] );
     ]

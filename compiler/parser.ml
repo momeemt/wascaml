@@ -17,7 +17,7 @@ and parse_let_expr tokens =
               let scope, tokens = parse_expr tokens in
               (LetRec (f, args, body, scope), tokens)
           | _ -> raise (ParseError "Expected 'in'"))
-      | _ -> raise (ParseError "Expected '='"))
+      | rest -> raise (ParseError ("Expected '=': " ^ string_of_tokens rest)))
   | Let :: Identifier id :: tokens -> (
       let args, tokens = parse_args [] tokens in
       match tokens with
@@ -28,7 +28,7 @@ and parse_let_expr tokens =
               let e2, tokens = parse_expr tokens in
               (Let (id, args, e1, e2), tokens)
           | _ -> raise (ParseError "Expected 'in'"))
-      | _ -> raise (ParseError "Expected '='"))
+      | rest -> raise (ParseError ("Expected '=': " ^ string_of_tokens rest)))
   | _ -> parse_fun_expr tokens
 
 and parse_fun_expr tokens =

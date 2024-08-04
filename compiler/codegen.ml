@@ -9,6 +9,8 @@ exception CodegenError of string
 module Funcs = Map.Make (String)
 module Env = Map.Make (String)
 
+type identifierKind = Func | Arg
+
 let codegen ast =
   let rec aux func_name funcs env expr =
     let aux_if cond then_ else_ =
@@ -33,11 +35,12 @@ let codegen ast =
       let new_func = { func with body = new_func_body } in
       Funcs.add func_name new_func right_funcs
     in
-    let aux_let name params value body =
+    let aux_let name params value body is_rec =
+      let rand_name = name ^ "_" ^ string_of_int (Random.bits ()) in
       let funcs =
         Funcs.add name
           {
-            name;
+            name = rand_name;
             params = List.map (fun param -> (Some param, I32)) params;
             results = [ I32 ];
             body = [];
@@ -45,8 +48,10 @@ let codegen ast =
           }
           funcs
       in
-      let funcs = aux name funcs env value in
-      aux func_name funcs env body
+      let value_funcs_env = List.fold_left (fun env param -> Env.add param (param, Arg) env) env params in
+      let value_funcs_env = if is_rec then Env.add name (rand_name, Func) value_funcs_env else value_funcs_env in
+      let funcs = aux name funcs value_funcs_env value in
+      aux func_name funcs (Env.add name (rand_name, Func) env) body
     in
     match expr with
     | IntLit n ->
@@ -62,14 +67,20 @@ let codegen ast =
               (funcs, acc @ arg_instrs))
             (funcs, []) args
         in
+        let (wat_name, wat_kind) =
+          match Env.find_opt name env with
+          | Some t -> t
+          | None -> raise (CodegenError ("not found identifier: " ^ name))
+        in
         let new_func_body =
-          match Funcs.find_opt name funcs with
-          | Some _ -> args_instrs @ [ Call name ]
-          | None -> args_instrs @ [ LocalGet name ]
+          match wat_kind with
+          | Func -> args_instrs @ [ Call wat_name ]
+          | Arg -> args_instrs @ [ LocalGet wat_name ]
         in
         Funcs.add func_name { func with body = new_func_body } funcs
     | If (cond, then_, else_) -> aux_if cond then_ else_
-    | Let (name, params, value, body) -> aux_let name params value body
+    | Let (name, params, value, body) -> aux_let name params value body false
+    | LetRec (name, params, value, body) -> aux_let name params value body true
     | Plus (left, right) -> aux_binops left right I32Add
     | Minus (left, right) -> aux_binops left right I32Sub
     | Times (left, right) -> aux_binops left right I32Mul
