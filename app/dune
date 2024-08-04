@@ -1,4 +1,5 @@
 (executable
  (name app)
  (public_name wascaml)
- (modules app))
+ (modules app)
+ (libraries wascaml.compiler))
