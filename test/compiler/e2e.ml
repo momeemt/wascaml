@@ -37,57 +37,79 @@ let exec_code code test_name =
   in
   run_wasmtime filename
 
-let exec_code_test case_name code expected_result =
+let exec_code_test case_name code expected =
   let result = exec_code code case_name in
-  Alcotest.(check string) code result (string_of_int expected_result ^ "\n")
+  Alcotest.(check string) code result expected
 
 let test_case name code expected_result =
   Alcotest.test_case code `Quick (fun _ ->
-      exec_code_test name code expected_result)
+      exec_code_test name code (string_of_int expected_result ^ "\n"))
+
+let test_case_str name code expected =
+  Alcotest.test_case code `Quick (fun _ -> exec_code_test name code expected)
 
 let () =
   Alcotest.run "Compiler.e2e"
     [
-      ("int32_1", [ test_case "int32_1" "42" 42 ]);
-      ("plus_1", [ test_case "plus_1" "21 + 42" 63 ]);
-      ("minus_1", [ test_case "minus_1" "40 - 15" 25 ]);
-      ("times_1", [ test_case "times_1" "8 * 5" 40 ]);
-      ("div_1", [ test_case "div_1" "49 / 7" 7 ]);
-      ("binops_1", [ test_case "binops_1" "12 + 3 * 5" 27 ]);
-      ("if_1", [ test_case "if_1" "if 0 = 0 then 1 else 3" 1 ]);
-      ("if_2", [ test_case "if_2" "if 1 = 2 then 3 else 4" 4 ]);
-      ("if_3", [ test_case "if_3" "if 1 < 10 then 20 else 30" 20 ]);
-      ("if_4", [ test_case "if_4" "if 2 > 20 then 40 else 50" 50 ]);
-      ("let_1", [ test_case "let_1" "let x = 10 in x" 10 ]);
-      ("let_2", [ test_case "let_2" "let x = 3 in 2 + x * x" 11 ]);
-      ("let_3", [ test_case "let_3" "let f x = x + x in f 3" 6 ]);
-      ("let_4", [ test_case "let_4" "let f x y = x * y in f 11 13" 143 ]);
-      ( "let_5",
-        [ test_case "let_5" "let f x = let g y = y + y in g x in f 3" 6 ] );
-      ( "let_6",
-        [ test_case "let_6" "let f x = let f y = y * y in f (x + x) in f 3" 36 ]
+      ("int32_1", [ test_case "int32_1" "print_int32 42" 42 ]);
+      ("plus_1", [ test_case "plus_1" "print_int32 (21 + 42)" 63 ]);
+      ("minus_1", [ test_case "minus_1" "print_int32 (40 - 15)" 25 ]);
+      ("times_1", [ test_case "times_1" "print_int32 (8 * 5)" 40 ]);
+      ("div_1", [ test_case "div_1" "print_int32 (49 / 7)" 7 ]);
+      ("binops_1", [ test_case "binops_1" "print_int32 (12 + 3 * 5)" 27 ]);
+      ("if_1", [ test_case "if_1" "print_int32 (if 0 = 0 then 1 else 3)" 1 ]);
+      ("if_2", [ test_case "if_2" "print_int32 (if 1 = 2 then 3 else 4)" 4 ]);
+      ("if_3", [ test_case "if_3" "print_int32 (if 1 < 10 then 20 else 30)" 20 ]);
+      ("if_4", [ test_case "if_4" "print_int32 (if 2 > 20 then 40 else 50)" 50 ]);
+      ("let_1", [ test_case "let_1" "let x = 10 in print_int32 x" 10 ]);
+      ("let_2", [ test_case "let_2" "let x = 3 in print_int32 (2 + x * x)" 11 ]);
+      ("let_3", [ test_case "let_3" "let f x = x + x in print_int32 (f 3)" 6 ]);
+      ( "let_4",
+        [ test_case "let_4" "let f x y = x * y in print_int32 (f 11 13)" 143 ]
       );
+      ( "let_5",
+        [
+          test_case "let_5"
+            "let f x = let g y = y + y in g x in print_int32 (f 3)" 6;
+        ] );
+      ( "let_6",
+        [
+          test_case "let_6"
+            "let f x = let f y = y * y in f (x + x) in print_int32 (f 3)" 36;
+        ] );
       ( "let_7",
         [
-          test_case "let_7" "let f x = let g x = x + x in g x + (g x) in f 10"
-            40;
+          test_case "let_7"
+            "let f x = let g x = x + x in g x + (g x) in print_int32 (f 10)" 40;
         ] );
       ( "let_8",
         [
-          test_case "let_8" "let f x = let f x = x * x in f x * (f x) in f 2" 16;
+          test_case "let_8"
+            "let f x = let f x = x * x in f x * (f x) in print_int32 (f 2)" 16;
         ] );
-      ("let_9", [ test_case "let_9" "let f1 x1 = x1 * x1 in f1 10" 100 ]);
-      ("let_10", [ test_case "let_10" "let f_1 x_1 = x_1 * x_1 in f_1 10" 100 ]);
+      ( "let_9",
+        [ test_case "let_9" "let f1 x1 = x1 * x1 in print_int32 (f1 10)" 100 ]
+      );
+      ( "let_10",
+        [
+          test_case "let_10" "let f_1 x_1 = x_1 * x_1 in print_int32 (f_1 10)"
+            100;
+        ] );
       ( "let_rec_1",
         [
           test_case "let_rec_1"
-            "let rec fact x = if x = 0 then 1 else x * (fact (x - 1)) in fact 5"
+            "let rec fact x = if x = 0 then 1 else x * (fact (x - 1)) in \
+             print_int32 (fact 5)"
             120;
         ] );
-      ("sequence_1", [ test_case "sequence_1" "1; 2; 3" 3 ]);
+      ( "sequence_1",
+        [ test_case "sequence_1" "discard 1; discard 2; print_int32 3" 3 ] );
       ( "sequence_2",
         [
-          test_case "sequence_2"
-            "if 1 = 2 then 3 else 4; let x = 10 in x + 20; 30" 30;
+          test_case_str "sequence_2"
+            "print_int32 (if 1 = 2 then 3 else 4); \
+             print_int32 (let x = 10 in x + 20); \
+             print_int32 (3 * 8)"
+            "4\n30\n24\n";
         ] );
     ]

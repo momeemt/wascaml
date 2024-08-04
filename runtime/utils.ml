@@ -139,5 +139,33 @@ let print_int32 =
         I32Const 108;
         Call "fd_write";
         Drop;
+        (* add newline *)
+        I32Const 0;
+        I32Const 10;
+        I32Store;
+        (* iov_base <- buffer *)
+        I32Const 100;
+        I32Const 0;
+        I32Store;
+        (* iov_len <- length - buffer *)
+        I32Const 104;
+        I32Const 1;
+        I32Store;
+        (* call fd_write *)
+        I32Const 1;
+        I32Const 100;
+        I32Const 1;
+        I32Const 108;
+        Call "fd_write";
+        Drop;
       ];
+  }
+
+let discard =
+  {
+    name = "discard";
+    params = [ (Some "num", I32) ];
+    locals = [];
+    results = [];
+    body = [ LocalGet "num"; Drop ];
   }

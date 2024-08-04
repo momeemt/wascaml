@@ -92,8 +92,7 @@ let codegen ast =
             (fun (funcs, acc) expr ->
               let funcs = aux func_name funcs env expr in
               let expr_instrs = (Funcs.find func_name funcs).body in
-              let drop_instrs = if expr <> List.hd (List.rev exprs) then [Drop] else [] in
-              (funcs, acc @ expr_instrs @ drop_instrs))
+              (funcs, acc @ expr_instrs))
             (funcs, []) exprs
         in
         Funcs.add func_name { func with body = exprs_instrs } funcs
@@ -116,15 +115,17 @@ let codegen ast =
   let start_func =
     { name = "_start"; params = []; results = []; body = []; locals = [] }
   in
-  let funcs =
-    aux "_start" Funcs.(empty |> add "_start" start_func) Env.empty ast
+  let env =
+    Env.(
+      empty
+      |> add "print_int32" ("print_int32", Func)
+      |> add "discard" ("discard", Func))
   in
+  let funcs = aux "_start" Funcs.(empty |> add "_start" start_func) env ast in
   let funcs =
     Funcs.map
       (fun (fn : func) ->
-        if fn.name = "_start" then
-          { fn with body = fn.body @ [ Call "print_int32" ] }
-        else fn)
+        if fn.name = "_start" then { fn with body = fn.body } else fn)
       funcs
   in
   let module_ =
@@ -132,16 +133,10 @@ let codegen ast =
       imports = [ fd_write; proc_exit ];
       exports = [ { name = "_start"; desc = FuncExport "_start" } ];
       funcs =
-        [ int32_to_ascii; print_int32 ] @ (Funcs.bindings funcs |> List.map snd);
+        [ int32_to_ascii; print_int32; discard ]
+        @ (Funcs.bindings funcs |> List.map snd);
       memory = Some { min_pages = 1; max_pages = None };
-      data =
-        [
-          {
-            offset = 0;
-            value =
-              "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-          };
-        ];
+      data = [];
     }
   in
   string_of_module module_
