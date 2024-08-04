@@ -3,7 +3,18 @@ open Ast
 
 exception ParseError of string
 
-let rec parse_expr tokens = parse_let_expr tokens
+let rec parse_expr tokens = parse_sequence_expr tokens
+
+and parse_sequence_expr tokens =
+  let rec aux acc tokens =
+    let expr, tokens = parse_let_expr tokens in
+    match tokens with
+    | SemiColon :: tokens -> aux (expr :: acc) tokens
+    | _ ->
+        if acc = [] then (expr, tokens)
+        else (Sequence (List.rev (expr :: acc)), tokens)
+  in
+  aux [] tokens
 
 and parse_let_expr tokens =
   match tokens with
@@ -140,4 +151,6 @@ let parse tokens =
   let ast, tokens = parse_expr tokens in
   match tokens with
   | [ EOF ] -> ast
-  | _ -> raise (ParseError "Unexpected tokens at the end")
+  | rest ->
+      raise
+        (ParseError ("Unexpected tokens at the end: " ^ string_of_tokens rest))

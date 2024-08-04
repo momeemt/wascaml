@@ -3,6 +3,7 @@ type ast =
   | LetRec of string * string list * ast * ast
   | Fun of string * ast
   | App of string * ast list
+  | Sequence of ast list
   | IntLit of int
   | FloatLit of float
   | StringLit of string
@@ -28,6 +29,10 @@ let rec string_of_ast ast =
   | App (name, exprs) ->
       "App (" ^ name ^ ": "
       ^ (List.map (fun expr -> string_of_ast expr) exprs |> String.concat " ")
+      ^ ")"
+  | Sequence exprs ->
+      "Sequence ("
+      ^ (List.map (fun expr -> string_of_ast expr) exprs |> String.concat ";")
       ^ ")"
   | IntLit n -> "IntLit (" ^ string_of_int n ^ ")"
   | FloatLit f -> "FloatLit (" ^ string_of_float f ^ ")"

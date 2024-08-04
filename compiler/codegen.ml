@@ -85,6 +85,18 @@ let codegen ast =
           | Arg -> args_instrs @ [ LocalGet wat_name ]
         in
         Funcs.add func_name { func with body = new_func_body } funcs
+    | Sequence exprs ->
+        let func = Funcs.find func_name funcs in
+        let funcs, exprs_instrs =
+          List.fold_left
+            (fun (funcs, acc) expr ->
+              let funcs = aux func_name funcs env expr in
+              let expr_instrs = (Funcs.find func_name funcs).body in
+              let drop_instrs = if expr <> List.hd (List.rev exprs) then [Drop] else [] in
+              (funcs, acc @ expr_instrs @ drop_instrs))
+            (funcs, []) exprs
+        in
+        Funcs.add func_name { func with body = exprs_instrs } funcs
     | If (cond, then_, else_) -> aux_if cond then_ else_
     | Let (name, params, value, body) -> aux_let name params value body false
     | LetRec (name, params, value, body) -> aux_let name params value body true

@@ -84,4 +84,10 @@ let () =
             "let rec fact x = if x = 0 then 1 else x * (fact (x - 1)) in fact 5"
             120;
         ] );
+      ("sequence_1", [ test_case "sequence_1" "1; 2; 3" 3 ]);
+      ( "sequence_2",
+        [
+          test_case "sequence_2"
+            "if 1 = 2 then 3 else 4; let x = 10 in x + 20; 30" 30;
+        ] );
     ]
