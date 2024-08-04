@@ -38,7 +38,7 @@ let codegen ast =
     let aux_let name params value body is_rec =
       let rand_name = name ^ "_" ^ string_of_int (Random.bits ()) in
       let funcs =
-        Funcs.add name
+        Funcs.add rand_name
           {
             name = rand_name;
             params = List.map (fun param -> (Some param, I32)) params;
@@ -50,7 +50,7 @@ let codegen ast =
       in
       let value_funcs_env = List.fold_left (fun env param -> Env.add param (param, Arg) env) env params in
       let value_funcs_env = if is_rec then Env.add name (rand_name, Func) value_funcs_env else value_funcs_env in
-      let funcs = aux name funcs value_funcs_env value in
+      let funcs = aux rand_name funcs value_funcs_env value in
       aux func_name funcs (Env.add name (rand_name, Func) env) body
     in
     match expr with

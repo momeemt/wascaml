@@ -64,6 +64,18 @@ let () =
       ("let_4", [ test_case "let_4" "let f x y = x * y in f 11 13" 143 ]);
       ( "let_5",
         [ test_case "let_5" "let f x = let g y = y + y in g x in f 3" 6 ] );
+      ( "let_6",
+        [ test_case "let_6" "let f x = let f y = y * y in f (x + x) in f 3" 36 ]
+      );
+      ( "let_7",
+        [
+          test_case "let_7" "let f x = let g x = x + x in g x + (g x) in f 10"
+            40;
+        ] );
+      ( "let_8",
+        [
+          test_case "let_8" "let f x = let f x = x * x in f x * (f x) in f 2" 16;
+        ] );
       ( "let_rec_1",
         [
           test_case "let_rec_1"

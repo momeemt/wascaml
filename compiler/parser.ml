@@ -114,7 +114,7 @@ and parse_app tokens : ast list * token list =
     match List.hd tokens with
     | LeftParen | LeftBracket | Int _ | Float _ | String _ | Bool _
     | Identifier _ ->
-        let ast, tokens = parse_expr tokens in
+        let ast, tokens = parse_primary_expr tokens in
         aux (ast :: acc) tokens
     | _ -> (List.rev acc, tokens)
   in
