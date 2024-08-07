@@ -64,6 +64,25 @@ let codegen ast =
     | IntLit n ->
         let func = Funcs.find func_name funcs in
         Funcs.add func_name { func with body = [ I32Const n ] } funcs
+    | List lst ->
+        let func = Funcs.find func_name funcs in
+        let start_addr = 1024 in
+        let funcs, lst_instrs, end_addr =
+          List.fold_left
+            (fun (funcs, acc, addr) expr ->
+              let funcs = aux func_name funcs env expr in
+              let expr_instrs = (Funcs.find func_name funcs).body in
+              let store_instrs =
+                [ I32Const addr ] @ expr_instrs @ [ I32Store ]
+              in
+              (funcs, acc @ store_instrs, addr + 4))
+            (funcs, [], start_addr) lst
+        in
+        let end_instrs = [ I32Const end_addr; I32Const 0; I32Store ] in
+        let new_func_body =
+          lst_instrs @ end_instrs @ [ I32Const start_addr; Call "print_list" ]
+        in
+        Funcs.add func_name { func with body = new_func_body } funcs
     | App (name, args) ->
         let func = Funcs.find func_name funcs in
         let funcs, args_instrs =
@@ -119,6 +138,7 @@ let codegen ast =
     Env.(
       empty
       |> add "print_int32" ("print_int32", Func)
+      |> add "print_list" ("print_list", Func)
       |> add "discard" ("discard", Func))
   in
   let funcs = aux "_start" Funcs.(empty |> add "_start" start_func) env ast in
@@ -133,7 +153,7 @@ let codegen ast =
       imports = [ fd_write; proc_exit ];
       exports = [ { name = "_start"; desc = FuncExport "_start" } ];
       funcs =
-        [ int32_to_ascii; print_int32; discard ]
+        [ int32_to_ascii; print_int32; print_list; discard ]
         @ (Funcs.bindings funcs |> List.map snd);
       memory = Some { min_pages = 1; max_pages = None };
       data = [];

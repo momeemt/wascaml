@@ -8,6 +8,7 @@ type ast =
   | FloatLit of float
   | StringLit of string
   | BoolLit of bool
+  | List of ast list
   | If of ast * ast * ast
   | Eq of ast * ast
   | Less of ast * ast
@@ -38,6 +39,7 @@ let rec string_of_ast ast =
   | FloatLit f -> "FloatLit (" ^ string_of_float f ^ ")"
   | StringLit s -> "StringLit(" ^ s ^ ")"
   | BoolLit b -> "BoolLit (" ^ string_of_bool b ^ ")"
+  | List l -> "List (" ^ (List.map string_of_ast l |> String.concat "; ") ^ ")"
   | If (e1, e2, e3) ->
       "If (" ^ string_of_ast e1 ^ ", " ^ string_of_ast e2 ^ ", "
       ^ string_of_ast e3 ^ ")"

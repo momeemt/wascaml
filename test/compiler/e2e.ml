@@ -107,9 +107,10 @@ let () =
       ( "sequence_2",
         [
           test_case_str "sequence_2"
-            "print_int32 (if 1 = 2 then 3 else 4); \
-             print_int32 (let x = 10 in x + 20); \
-             print_int32 (3 * 8)"
+            "print_int32 (if 1 = 2 then 3 else 4); print_int32 (let x = 10 in \
+             x + 20); print_int32 (3 * 8)"
             "4\n30\n24\n";
         ] );
+      (* FIXME: should output [1; 2; 3] *)
+      ("list_1", [ test_case_str "list_1" "[1 2 3]" "1\n2\n3\n" ]);
     ]

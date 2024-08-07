@@ -169,3 +169,39 @@ let discard =
     results = [];
     body = [ LocalGet "num"; Drop ];
   }
+
+let print_list =
+  {
+    name = "print_list";
+    params = [ (Some "list", I32) ];
+    locals = [ (Some "head", I32) ];
+    results = [];
+    body =
+      [
+        LocalGet "list";
+        LocalSet "head";
+        Block
+          ( "exit",
+            [
+              Loop
+                ( "loop",
+                  [
+                    LocalGet "head";
+                    I32Load;
+                    I32Eqz;
+                    BrIf "exit";
+                    (* print head *)
+                    LocalGet "head";
+                    I32Load;
+                    Call "print_int32";
+                    (* head = head + 4 *)
+                    LocalGet "head";
+                    I32Const 4;
+                    I32Add;
+                    LocalSet "head";
+                    (* continue the loop *)
+                    Br "loop";
+                  ] );
+            ] );
+      ];
+  }
