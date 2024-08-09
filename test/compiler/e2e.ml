@@ -52,6 +52,7 @@ let () =
   Alcotest.run "Compiler.e2e"
     [
       ("int32_1", [ test_case "int32_1" "print_int32 42" 42 ]);
+      ("int32_2", [ test_case "int32_2" "print_int32 0" 0 ]);
       ("plus_1", [ test_case "plus_1" "print_int32 (21 + 42)" 63 ]);
       ("minus_1", [ test_case "minus_1" "print_int32 (40 - 15)" 25 ]);
       ("times_1", [ test_case "times_1" "print_int32 (8 * 5)" 40 ]);

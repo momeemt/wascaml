@@ -20,36 +20,51 @@ let int32_to_ascii =
         Block
           ( "exit",
             [
-              Loop
-                ( "loop",
-                  [
-                    (* if num = 0 then break *)
-                    LocalGet "num";
-                    I32Eqz;
-                    BrIf "exit";
-                    (* tmp = num % 10 *)
-                    LocalGet "num";
-                    I32Const 10;
-                    I32RemU;
-                    LocalSet "tmp";
-                    (* *pos = tmp + 48 (to ascii) *)
+              LocalGet "num";
+              I32Eqz;
+              IfVoid
+                ( [
                     LocalGet "pos";
-                    LocalGet "tmp";
                     I32Const 48;
-                    I32Add;
                     I32Store8;
-                    (* pos++ *)
                     LocalGet "pos";
                     I32Const 1;
                     I32Add;
                     LocalSet "pos";
-                    (* num /= 10 *)
-                    LocalGet "num";
-                    I32Const 10;
-                    I32DivU;
-                    LocalSet "num";
-                    (* to "loop" label *)
-                    Br "loop";
+                    Br "exit";
+                  ],
+                  [
+                    Loop
+                      ( "loop",
+                        [
+                          (* tmp = num % 10 *)
+                          LocalGet "num";
+                          I32Const 10;
+                          I32RemU;
+                          LocalSet "tmp";
+                          (* *pos = tmp + 48 (to ascii) *)
+                          LocalGet "pos";
+                          LocalGet "tmp";
+                          I32Const 48;
+                          I32Add;
+                          I32Store8;
+                          (* pos++ *)
+                          LocalGet "pos";
+                          I32Const 1;
+                          I32Add;
+                          LocalSet "pos";
+                          (* num /= 10 *)
+                          LocalGet "num";
+                          I32Const 10;
+                          I32DivU;
+                          LocalSet "num";
+                          (* if num = 0 then break *)
+                          LocalGet "num";
+                          I32Eqz;
+                          BrIf "exit";
+                          (* to "loop" label *)
+                          Br "loop";
+                        ] );
                   ] );
             ] );
         (* *pos = 0 *)
@@ -221,10 +236,7 @@ let list_length =
     params = [ (Some "lst_addr", I32) ];
     locals = [];
     results = [ I32 ];
-    body = [
-      LocalGet "lst_addr";
-      I32Load8U;
-    ];
+    body = [ LocalGet "lst_addr"; I32Load8U ];
   }
 
 let print_list =

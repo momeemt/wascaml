@@ -2,6 +2,7 @@ type instr =
   | Block of string * expr (* 0x02 *)
   | Loop of string * expr (* 0x03 *)
   | If of expr * expr (* 0x04, 0x05 *)
+  | IfVoid of expr * expr (* FIXME: hard code - result i32 *)
   | Br of string (* 0x0C *)
   | BrIf of string (* 0x0D *)
   | Call of string (* 0x10 *)
@@ -37,6 +38,9 @@ let rec string_of_instr instr =
   (* FIXME: hard code - result i32 *)
   | If (then_, else_) ->
       Printf.sprintf "(if (result i32)\n(then\n%s\n)\n(else\n%s\n)\n)"
+        (string_of_exprs then_) (string_of_exprs else_)
+  | IfVoid (then_, else_) ->
+      Printf.sprintf "(if\n(then\n%s\n)\n(else\n%s\n)\n)"
         (string_of_exprs then_) (string_of_exprs else_)
   | Br label -> Printf.sprintf "br $%s" label
   | BrIf label -> Printf.sprintf "br_if $%s" label
