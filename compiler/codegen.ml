@@ -12,30 +12,30 @@ module Env = Map.Make (String)
 type identifierKind = Func | Arg
 
 let codegen ast =
-  let rec aux func_name funcs env expr =
-    let aux_if cond then_ else_ =
-      let cond_funcs = aux func_name funcs env cond in
+  let rec aux func_name funcs env expr addr =
+    let aux_if cond then_ else_ addr =
+      let cond_funcs, addr = aux func_name funcs env cond addr in
       let cond = (Funcs.find func_name cond_funcs).body in
-      let then_funcs = aux func_name cond_funcs env then_ in
+      let then_funcs, addr = aux func_name cond_funcs env then_ addr in
       let then_ = (Funcs.find func_name then_funcs).body in
-      let else_funcs = aux func_name then_funcs env else_ in
+      let else_funcs, addr = aux func_name then_funcs env else_ addr in
       let func = Funcs.find func_name else_funcs in
       let else_ = func.body in
       let new_func_body = cond @ [ Runtime.Instructions.If (then_, else_) ] in
       let new_func = { func with body = new_func_body } in
-      Funcs.add func_name new_func else_funcs
+      (Funcs.add func_name new_func else_funcs, addr)
     in
-    let aux_binops left right op =
-      let left_funcs = aux func_name funcs env left in
+    let aux_binops left right op addr =
+      let left_funcs, addr = aux func_name funcs env left addr in
       let left = (Funcs.find func_name left_funcs).body in
-      let right_funcs = aux func_name left_funcs env right in
+      let right_funcs, addr = aux func_name left_funcs env right addr in
       let func = Funcs.find func_name right_funcs in
       let right = func.body in
       let new_func_body = left @ right @ [ op ] in
       let new_func = { func with body = new_func_body } in
-      Funcs.add func_name new_func right_funcs
+      (Funcs.add func_name new_func right_funcs, addr)
     in
-    let aux_let name params value body is_rec =
+    let aux_let name params value body is_rec addr =
       let rand_name = name ^ "_" ^ string_of_int (Random.bits ()) in
       let funcs =
         Funcs.add rand_name
@@ -57,41 +57,53 @@ let codegen ast =
         if is_rec then Env.add name (rand_name, Func) value_funcs_env
         else value_funcs_env
       in
-      let funcs = aux rand_name funcs value_funcs_env value in
-      aux func_name funcs (Env.add name (rand_name, Func) env) body
+      let funcs, addr = aux rand_name funcs value_funcs_env value addr in
+      aux func_name funcs (Env.add name (rand_name, Func) env) body addr
     in
     match expr with
     | IntLit n ->
         let func = Funcs.find func_name funcs in
-        Funcs.add func_name { func with body = [ I32Const n ] } funcs
+        (Funcs.add func_name { func with body = [ I32Const n ] } funcs, addr)
+    | StringLit s ->
+        let func = Funcs.find func_name funcs in
+        let start_addr = addr in
+        let new_func_body, addr =
+          List.fold_left
+            (fun (acc, addr) c ->
+              ( acc @ [ I32Const addr; I32Const (Char.code c); I32Store ],
+                addr + 1 ))
+            ([ I32Const addr; I32Const (String.length s); I32Store ], addr + 1)
+            (List.init (String.length s) (String.get s))
+        in
+        let new_func_body = new_func_body @ [ I32Const start_addr ] in
+        (Funcs.add func_name { func with body = new_func_body } funcs, addr)
     | List lst ->
         let func = Funcs.find func_name funcs in
-        let start_addr = 1024 in
         let funcs, lst_instrs, end_addr =
           List.fold_left
             (fun (funcs, acc, addr) expr ->
-              let funcs = aux func_name funcs env expr in
+              let funcs, addr = aux func_name funcs env expr addr in
               let expr_instrs = (Funcs.find func_name funcs).body in
               let store_instrs =
                 [ I32Const addr ] @ expr_instrs @ [ I32Store ]
               in
               (funcs, acc @ store_instrs, addr + 4))
-            (funcs, [], start_addr) lst
+            (funcs, [], addr) lst
         in
         let end_instrs = [ I32Const end_addr; I32Const 0; I32Store ] in
         let new_func_body =
-          lst_instrs @ end_instrs @ [ I32Const start_addr; Call "print_list" ]
+          lst_instrs @ end_instrs @ [ I32Const addr; Call "print_list" ]
         in
-        Funcs.add func_name { func with body = new_func_body } funcs
+        (Funcs.add func_name { func with body = new_func_body } funcs, end_addr)
     | App (name, args) ->
         let func = Funcs.find func_name funcs in
-        let funcs, args_instrs =
+        let funcs, args_instrs, end_addr =
           List.fold_left
-            (fun (funcs, acc) arg ->
-              let funcs = aux func_name funcs env arg in
+            (fun (funcs, acc, addr) arg ->
+              let funcs, addr = aux func_name funcs env arg addr in
               let arg_instrs = (Funcs.find func_name funcs).body in
-              (funcs, acc @ arg_instrs))
-            (funcs, []) args
+              (funcs, acc @ arg_instrs, addr))
+            (funcs, [], addr) args
         in
         let wat_name, wat_kind =
           match Env.find_opt name env with
@@ -103,28 +115,30 @@ let codegen ast =
           | Func -> args_instrs @ [ Call wat_name ]
           | Arg -> args_instrs @ [ LocalGet wat_name ]
         in
-        Funcs.add func_name { func with body = new_func_body } funcs
+        (Funcs.add func_name { func with body = new_func_body } funcs, end_addr)
     | Sequence exprs ->
         let func = Funcs.find func_name funcs in
-        let funcs, exprs_instrs =
+        let funcs, exprs_instrs, end_addr =
           List.fold_left
-            (fun (funcs, acc) expr ->
-              let funcs = aux func_name funcs env expr in
+            (fun (funcs, acc, addr) expr ->
+              let funcs, addr = aux func_name funcs env expr addr in
               let expr_instrs = (Funcs.find func_name funcs).body in
-              (funcs, acc @ expr_instrs))
-            (funcs, []) exprs
+              (funcs, acc @ expr_instrs, addr))
+            (funcs, [], addr) exprs
         in
-        Funcs.add func_name { func with body = exprs_instrs } funcs
-    | If (cond, then_, else_) -> aux_if cond then_ else_
-    | Let (name, params, value, body) -> aux_let name params value body false
-    | LetRec (name, params, value, body) -> aux_let name params value body true
-    | Plus (left, right) -> aux_binops left right I32Add
-    | Minus (left, right) -> aux_binops left right I32Sub
-    | Times (left, right) -> aux_binops left right I32Mul
-    | Div (left, right) -> aux_binops left right I32DivS
-    | Eq (left, right) -> aux_binops left right I32Eq
-    | Greater (left, right) -> aux_binops left right I32GtU
-    | Less (left, right) -> aux_binops left right I32LtU
+        (Funcs.add func_name { func with body = exprs_instrs } funcs, end_addr)
+    | If (cond, then_, else_) -> aux_if cond then_ else_ addr
+    | Let (name, params, value, body) ->
+        aux_let name params value body false addr
+    | LetRec (name, params, value, body) ->
+        aux_let name params value body true addr
+    | Plus (left, right) -> aux_binops left right I32Add addr
+    | Minus (left, right) -> aux_binops left right I32Sub addr
+    | Times (left, right) -> aux_binops left right I32Mul addr
+    | Div (left, right) -> aux_binops left right I32DivS addr
+    | Eq (left, right) -> aux_binops left right I32Eq addr
+    | Greater (left, right) -> aux_binops left right I32GtU addr
+    | Less (left, right) -> aux_binops left right I32LtU addr
     | rest ->
         raise
           (CodegenError
@@ -139,9 +153,12 @@ let codegen ast =
       empty
       |> add "print_int32" ("print_int32", Func)
       |> add "print_list" ("print_list", Func)
+      |> add "print_string" ("print_string", Func)
       |> add "discard" ("discard", Func))
   in
-  let funcs = aux "_start" Funcs.(empty |> add "_start" start_func) env ast in
+  let funcs, _ =
+    aux "_start" Funcs.(empty |> add "_start" start_func) env ast 1024
+  in
   let funcs =
     Funcs.map
       (fun (fn : func) ->
@@ -153,7 +170,7 @@ let codegen ast =
       imports = [ fd_write; proc_exit ];
       exports = [ { name = "_start"; desc = FuncExport "_start" } ];
       funcs =
-        [ int32_to_ascii; print_int32; print_list; discard ]
+        [ int32_to_ascii; print_int32; print_list; print_string; discard ]
         @ (Funcs.bindings funcs |> List.map snd);
       memory = Some { min_pages = 1; max_pages = None };
       data = [];

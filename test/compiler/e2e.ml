@@ -39,7 +39,7 @@ let exec_code code test_name =
 
 let exec_code_test case_name code expected =
   let result = exec_code code case_name in
-  Alcotest.(check string) code result expected
+  Alcotest.(check string) code expected result
 
 let test_case name code expected_result =
   Alcotest.test_case code `Quick (fun _ ->
@@ -113,4 +113,9 @@ let () =
         ] );
       (* FIXME: should output [1; 2; 3] *)
       ("list_1", [ test_case_str "list_1" "[1 2 3]" "1\n2\n3\n" ]);
+      ( "string_1",
+        [
+          test_case_str "string_1" "print_string \"Hello, World!\""
+            "Hello, World!\n";
+        ] );
     ]

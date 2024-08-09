@@ -107,6 +107,51 @@ let int32_to_ascii =
       ];
   }
 
+let print_string =
+  {
+    name = "print_string";
+    params = [ (Some "str_addr", I32) ];
+    locals = [ (Some "length", I32); (Some "buffer", I32) ];
+    results = [];
+    body =
+      [
+        LocalGet "str_addr";
+        I32Const 1;
+        I32Add;
+        LocalSet "buffer";
+        LocalGet "str_addr";
+        I32Load8U;
+        LocalSet "length";
+        I32Const 100;
+        LocalGet "buffer";
+        I32Store;
+        I32Const 104;
+        LocalGet "length";
+        I32Store;
+        I32Const 1;
+        I32Const 100;
+        I32Const 1;
+        I32Const 108;
+        Call "fd_write";
+        Drop;
+        I32Const 0;
+        I32Const 10;
+        I32Store;
+        I32Const 100;
+        I32Const 0;
+        I32Store;
+        I32Const 104;
+        I32Const 1;
+        I32Store;
+        I32Const 1;
+        I32Const 100;
+        I32Const 1;
+        I32Const 108;
+        Call "fd_write";
+        Drop;
+      ];
+  }
+
 let print_int32 =
   {
     name = "print_int32";

@@ -110,6 +110,7 @@ and parse_primary_expr tokens =
   match tokens with
   | Int n :: tokens -> (IntLit n, tokens)
   | Bool b :: tokens -> (BoolLit b, tokens)
+  | String s :: tokens -> (StringLit s, tokens)
   | Identifier id :: tokens ->
       let args, tokens = parse_app tokens in
       (App (id, args), tokens)

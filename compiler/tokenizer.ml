@@ -68,9 +68,9 @@ let tokenize input =
     else
       match input.[pos] with
       | ' ' | '\t' | '\n' -> aux (pos + 1) tokens
+      | '"' -> tokenize_string (pos + 1) tokens
       | '0' .. '9' -> tokenize_number pos tokens
       | 'a' .. 'z' | 'A' .. 'Z' -> tokenize_identifier pos tokens
-      | '"' -> tokenize_string pos tokens
       | '+' -> aux (pos + 1) (Plus :: tokens)
       | '-' ->
           if pos + 1 < length && input.[pos + 1] = '>' then
