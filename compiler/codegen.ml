@@ -81,21 +81,26 @@ let codegen ast =
         let func = Funcs.find func_name funcs in
         let funcs, lst_instrs, end_addr =
           List.fold_left
-            (fun (funcs, acc, addr) expr ->
+            (fun (funcs, acc, addr) (expr, is_last) ->
               let funcs, addr = aux func_name funcs env expr addr in
               let expr_instrs = (Funcs.find func_name funcs).body in
-              let store_instrs =
-                [ I32Const addr ] @ expr_instrs @ [ I32Store ]
+              let next_addr = addr + 4 in
+              let load_next_instrs =
+                if is_last then [ I32Const (-1) ]
+                else [ I32Const (next_addr + 4) ]
               in
-              (funcs, acc @ store_instrs, addr + 1))
-            ( funcs,
-              [ I32Const addr; I32Const (List.length lst); I32Store ],
-              addr + 1 )
-            lst
+              let store_instrs =
+                [ I32Const addr ] @ expr_instrs
+                @ [ I32Store; I32Const next_addr ]
+                @ load_next_instrs @ [ I32Store ]
+              in
+              (funcs, acc @ store_instrs, next_addr + 4))
+            (funcs, [], addr)
+            (List.mapi (fun i expr -> (expr, i = List.length lst - 1)) lst)
         in
-        let new_func_body = lst_instrs @ [ I32Const addr ] in
-        ( Funcs.add func_name { func with body = new_func_body } funcs,
-          end_addr + 1 )
+        let head_addr = if List.length lst = 0 then -1 else addr in
+        let new_func_body = lst_instrs @ [ I32Const head_addr ] in
+        (Funcs.add func_name { func with body = new_func_body } funcs, end_addr)
     | App (name, args) ->
         let func = Funcs.find func_name funcs in
         let funcs, args_instrs, end_addr =

@@ -113,8 +113,11 @@ let () =
             "4\n30\n24\n";
         ] );
       ("list_1", [ test_case_str "list_1" "print_list [1 2 3]" "1\n2\n3\n" ]);
-      ("list_length_1", [ test_case "list_length_1" "print_int32 (list_length [10 20 30])" 3 ]);
-      ("list_length_2", [ test_case "list_length_2" "print_int32 (list_length [])" 0]);
+      ( "list_length_1",
+        [ test_case "list_length_1" "print_int32 (list_length [10 20 30])" 3 ]
+      );
+      ( "list_length_2",
+        [ test_case "list_length_2" "print_int32 (list_length [])" 0 ] );
       ( "string_1",
         [
           test_case_str "string_1" "print_string \"Hello, World!\""

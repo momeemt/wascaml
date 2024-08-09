@@ -234,25 +234,13 @@ let list_length =
   {
     name = "list_length";
     params = [ (Some "lst_addr", I32) ];
-    locals = [];
+    locals = [ (Some "cnt", I32); (Some "buffer", I32) ];
     results = [ I32 ];
-    body = [ LocalGet "lst_addr"; I32Load8U ];
-  }
-
-let print_list =
-  {
-    name = "print_list";
-    params = [ (Some "lst_addr", I32) ];
-    locals = [ (Some "length", I32); (Some "buffer", I32) ];
-    results = [];
     body =
       [
+        I32Const 0;
+        LocalSet "cnt";
         LocalGet "lst_addr";
-        I32Load8U;
-        LocalSet "length";
-        LocalGet "lst_addr";
-        I32Const 1;
-        I32Add;
         LocalSet "buffer";
         Block
           ( "exit",
@@ -260,20 +248,57 @@ let print_list =
               Loop
                 ( "loop",
                   [
-                    LocalGet "length";
-                    I32Eqz;
+                    LocalGet "buffer";
+                    I32Const (-1);
+                    I32Eq;
                     BrIf "exit";
-                    LocalGet "buffer";
-                    I32Load8U;
-                    Call "print_int32";
-                    LocalGet "buffer";
+                    LocalGet "cnt";
                     I32Const 1;
                     I32Add;
+                    LocalSet "cnt";
+                    LocalGet "buffer";
+                    I32Const 4;
+                    I32Add;
+                    I32Load;
                     LocalSet "buffer";
-                    LocalGet "length";
-                    I32Const 1;
-                    I32Sub;
-                    LocalSet "length";
+                    Br "loop";
+                  ] );
+            ] );
+        LocalGet "cnt";
+      ];
+  }
+
+let print_list =
+  {
+    name = "print_list";
+    params = [ (Some "lst_addr", I32) ];
+    locals = [ (Some "buffer", I32) ];
+    results = [];
+    body =
+      [
+        LocalGet "lst_addr";
+        LocalSet "buffer";
+        Block
+          ( "exit",
+            [
+              Loop
+                ( "loop",
+                  [
+                    LocalGet "buffer";
+                    I32Load;
+                    Call "print_int32";
+                    LocalGet "buffer";
+                    I32Const 4;
+                    I32Add;
+                    LocalSet "buffer";
+                    LocalGet "buffer";
+                    I32Load;
+                    I32Const (-1);
+                    I32Eq;
+                    BrIf "exit";
+                    LocalGet "buffer";
+                    I32Load;
+                    LocalSet "buffer";
                     Br "loop";
                   ] );
             ] );

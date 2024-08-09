@@ -11,6 +11,7 @@ type instr =
   | LocalSet of string (* 0x21 *)
   | LocalTee of string (* 0x22 *)
   | I32Load (* 0x28 *)
+  | I32Load8S (* 0x2C *)
   | I32Load8U (* 0x2D *)
   | I32Store (* 0x36 *)
   | I32Store8 (* 0x3A *)
@@ -50,6 +51,7 @@ let rec string_of_instr instr =
   | LocalSet label -> Printf.sprintf "local.set $%s" label
   | LocalTee label -> Printf.sprintf "local.tee $%s" label
   | I32Load -> "i32.load"
+  | I32Load8S -> "i32.load8_s"
   | I32Load8U -> "i32.load8_u"
   | I32Store -> "i32.store"
   | I32Store8 -> "i32.store8"
