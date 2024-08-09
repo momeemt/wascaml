@@ -87,14 +87,15 @@ let codegen ast =
               let store_instrs =
                 [ I32Const addr ] @ expr_instrs @ [ I32Store ]
               in
-              (funcs, acc @ store_instrs, addr + 4))
-            (funcs, [], addr) lst
+              (funcs, acc @ store_instrs, addr + 1))
+            ( funcs,
+              [ I32Const addr; I32Const (List.length lst); I32Store ],
+              addr + 1 )
+            lst
         in
-        let end_instrs = [ I32Const end_addr; I32Const 0; I32Store ] in
-        let new_func_body =
-          lst_instrs @ end_instrs @ [ I32Const addr; Call "print_list" ]
-        in
-        (Funcs.add func_name { func with body = new_func_body } funcs, end_addr)
+        let new_func_body = lst_instrs @ [ I32Const addr ] in
+        ( Funcs.add func_name { func with body = new_func_body } funcs,
+          end_addr + 1 )
     | App (name, args) ->
         let func = Funcs.find func_name funcs in
         let funcs, args_instrs, end_addr =

@@ -218,33 +218,38 @@ let discard =
 let print_list =
   {
     name = "print_list";
-    params = [ (Some "list", I32) ];
-    locals = [ (Some "head", I32) ];
+    params = [ (Some "lst_addr", I32) ];
+    locals = [ (Some "length", I32); (Some "buffer", I32) ];
     results = [];
     body =
       [
-        LocalGet "list";
-        LocalSet "head";
+        LocalGet "lst_addr";
+        I32Load8U;
+        LocalSet "length";
+        LocalGet "lst_addr";
+        I32Const 1;
+        I32Add;
+        LocalSet "buffer";
         Block
           ( "exit",
             [
               Loop
                 ( "loop",
                   [
-                    LocalGet "head";
-                    I32Load;
+                    LocalGet "length";
                     I32Eqz;
                     BrIf "exit";
-                    (* print head *)
-                    LocalGet "head";
-                    I32Load;
+                    LocalGet "buffer";
+                    I32Load8U;
                     Call "print_int32";
-                    (* head = head + 4 *)
-                    LocalGet "head";
-                    I32Const 4;
+                    LocalGet "buffer";
+                    I32Const 1;
                     I32Add;
-                    LocalSet "head";
-                    (* continue the loop *)
+                    LocalSet "buffer";
+                    LocalGet "length";
+                    I32Const 1;
+                    I32Sub;
+                    LocalSet "length";
                     Br "loop";
                   ] );
             ] );

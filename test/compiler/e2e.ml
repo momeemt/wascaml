@@ -111,8 +111,7 @@ let () =
              x + 20); print_int32 (3 * 8)"
             "4\n30\n24\n";
         ] );
-      (* FIXME: should output [1; 2; 3] *)
-      ("list_1", [ test_case_str "list_1" "[1 2 3]" "1\n2\n3\n" ]);
+      ("list_1", [ test_case_str "list_1" "print_list [1 2 3]" "1\n2\n3\n" ]);
       ( "string_1",
         [
           test_case_str "string_1" "print_string \"Hello, World!\""
