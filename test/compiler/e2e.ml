@@ -118,6 +118,16 @@ let () =
       );
       ( "list_length_2",
         [ test_case "list_length_2" "print_int32 (list_length [])" 0 ] );
+      ( "list_cons_1",
+        [ test_case_str "list_cons_1" "print_list (1 :: [2 3])" "1\n2\n3\n" ] );
+      ( "list_cons_2",
+        [ test_case_str "list_cons_2" "print_list (1 :: 2 :: [3])" "1\n2\n3\n" ]
+      );
+      ( "list_cons_3",
+        [
+          test_case_str "list_cons_3" "print_list (1 :: 2 :: 3 :: [])"
+            "1\n2\n3\n";
+        ] );
       ( "string_1",
         [
           test_case_str "string_1" "print_string \"Hello, World!\""

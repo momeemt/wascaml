@@ -103,6 +103,17 @@ and parse_mul_div_expr tokens =
         aux (Div (acc, rhs)) tokens
     | _ -> (acc, tokens)
   in
+  let lhs, tokens = parse_list_ops_expr tokens in
+  aux lhs tokens
+
+and parse_list_ops_expr tokens =
+  let rec aux acc tokens =
+    match tokens with
+    | DoubleColon :: tokens ->
+        let rhs, tokens = parse_expr tokens in
+        aux (Cons (acc, rhs)) tokens
+    | _ -> (acc, tokens)
+  in
   let lhs, tokens = parse_primary_expr tokens in
   aux lhs tokens
 

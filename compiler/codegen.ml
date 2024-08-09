@@ -101,6 +101,16 @@ let codegen ast =
         let head_addr = if List.length lst = 0 then -1 else addr in
         let new_func_body = lst_instrs @ [ I32Const head_addr ] in
         (Funcs.add func_name { func with body = new_func_body } funcs, end_addr)
+    | Cons (cons, lst) ->
+        let func = Funcs.find func_name funcs in
+        let lst_funcs, addr = aux func_name funcs env lst addr in
+        let lst_expr_instr = (Funcs.find func_name lst_funcs).body in
+        let cons_funcs, addr = aux func_name lst_funcs env cons addr in
+        let cons_expr_instr = (Funcs.find func_name cons_funcs).body in
+        let new_func_body = [I32Const addr] @ cons_expr_instr @ [I32Store] in
+        let next_addr = addr + 4 in
+        let new_func_body = new_func_body @ [I32Const next_addr] @ lst_expr_instr @ [I32Store; I32Const addr] in
+        (Funcs.add func_name { func with body = new_func_body } funcs, next_addr + 4)
     | App (name, args) ->
         let func = Funcs.find func_name funcs in
         let funcs, args_instrs, end_addr =
