@@ -119,10 +119,9 @@ and parse_primary_expr tokens =
       match tokens with
       | RightParen :: tokens -> (expr, tokens)
       | _ -> raise (ParseError "Expected ')'"))
-  | LeftBracket :: tokens -> (
+  | LeftBracket :: tokens ->
       let exprs, tokens = parse_list tokens in
       (List exprs, tokens)
-  )
   | _ -> raise (ParseError "Expected primary expression")
 
 and parse_list tokens =
