@@ -155,6 +155,7 @@ let codegen ast =
       |> add "print_int32" ("print_int32", Func)
       |> add "print_list" ("print_list", Func)
       |> add "print_string" ("print_string", Func)
+      |> add "list_length" ("list_length", Func)
       |> add "discard" ("discard", Func))
   in
   let funcs, _ =
@@ -171,7 +172,14 @@ let codegen ast =
       imports = [ fd_write; proc_exit ];
       exports = [ { name = "_start"; desc = FuncExport "_start" } ];
       funcs =
-        [ int32_to_ascii; print_int32; print_list; print_string; discard ]
+        [
+          int32_to_ascii;
+          print_int32;
+          print_list;
+          print_string;
+          list_length;
+          discard;
+        ]
         @ (Funcs.bindings funcs |> List.map snd);
       memory = Some { min_pages = 1; max_pages = None };
       data = [];

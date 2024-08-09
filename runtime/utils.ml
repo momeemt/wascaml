@@ -215,6 +215,18 @@ let discard =
     body = [ LocalGet "num"; Drop ];
   }
 
+let list_length =
+  {
+    name = "list_length";
+    params = [ (Some "lst_addr", I32) ];
+    locals = [];
+    results = [ I32 ];
+    body = [
+      LocalGet "lst_addr";
+      I32Load8U;
+    ];
+  }
+
 let print_list =
   {
     name = "print_list";
