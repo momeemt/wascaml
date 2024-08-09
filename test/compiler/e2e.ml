@@ -118,4 +118,11 @@ let () =
           test_case_str "string_1" "print_string \"Hello, World!\""
             "Hello, World!\n";
         ] );
+      ( "string_2",
+        [
+          test_case_str "string_2"
+            "print_string \"# Todo\"; print_string \"- File I/O\"; \
+             print_string \"- ref\""
+            "# Todo\n- File I/O\n- ref\n";
+        ] );
     ]
