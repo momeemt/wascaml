@@ -3,6 +3,7 @@ open Ast
 type tyvar = string
 
 type ty =
+  | TUnit
   | TInt
   | TBool
   | TString
@@ -24,7 +25,10 @@ let rec lookup x env =
 let rec occurs tx t =
   if tx = t then true
   else
-    match t with TArrow (t1, t2) -> occurs tx t1 || occurs tx t2 | _ -> false
+    match t with
+    | TArrow (t1, t2) -> occurs tx t1 || occurs tx t2
+    | TList t1 -> occurs tx t1
+    | _ -> false
 
 let rec subst_ty theta t =
   let rec subst_ty1 theta1 s =
@@ -33,6 +37,7 @@ let rec subst_ty theta t =
     | (tx, t1) :: theta2 -> if tx = s then t1 else subst_ty1 theta2 s
   in
   match t with
+  | TUnit -> TUnit
   | TInt -> TInt
   | TBool -> TBool
   | TString -> TString
@@ -83,9 +88,125 @@ let unify eql =
   solve eql []
 
 let tinf e =
-  let aux te e n =
+  let rec aux te e n =
     match e with
     | IntLit _ -> (te, TInt, theta0, n)
-    | _ -> failwith "not implemented"
+    | StringLit _ -> (te, TString, theta0, n)
+    | List [] ->
+        let t, n1 = new_typevar n in
+        (te, TList t, theta0, n1)
+    | List (h :: tl) ->
+        let te1, t1, theta1, n1 = aux te h n in
+        let te2, t2, theta2, n2 = aux te1 (List tl) n1 in
+        let t11 = subst_ty theta2 t1 in
+        let theta3 = unify [ (t11, t2) ] in
+        let te3 = subst_tyenv theta3 te2 in
+        let theta4 = compose_subst theta3 (compose_subst theta2 theta1) in
+        (te3, TList t2, theta4, n2)
+    | Plus (e1, e2) | Minus (e1, e2) | Times (e1, e2) | Div (e1, e2) ->
+        let te1, t1, theta1, n1 = aux te e1 n in
+        let te2, t2, theta2, n2 = aux te1 e2 n1 in
+        let t11 = subst_ty theta2 t1 in
+        let theta3 = unify [ (t11, TInt); (t2, TInt) ] in
+        let te3 = subst_tyenv theta3 te2 in
+        let theta4 = compose_subst theta3 (compose_subst theta2 theta1) in
+        (te3, TInt, theta4, n2)
+    | Eq (e1, e2) | Less (e1, e2) | Greater (e1, e2) ->
+        let te1, t1, theta1, n1 = aux te e1 n in
+        let te2, t2, theta2, n2 = aux te1 e2 n1 in
+        let t11 = subst_ty theta2 t1 in
+        let theta3 = unify [ (t11, TInt); (t2, TInt) ] in
+        let te3 = subst_tyenv theta3 te2 in
+        let theta4 = compose_subst theta3 (compose_subst theta2 theta1) in
+        (te3, TBool, theta4, n2)
+    | If (e1, e2, e3) ->
+        let te1, t1, theta1, n1 = aux te e1 n in
+        let te2, t2, theta2, n2 = aux te1 e2 n1 in
+        let te3, t3, theta3, n3 = aux te2 e3 n2 in
+        let t11 = subst_ty theta3 t1 in
+        let theta4 = unify [ (t11, TBool); (t2, t3) ] in
+        let te4 = subst_tyenv theta4 te3 in
+        let theta5 =
+          compose_subst theta4
+            (compose_subst theta3 (compose_subst theta2 theta1))
+        in
+        (te4, t2, theta5, n3)
+    | Let (name, params, value, body) ->
+        let param_types, n1 =
+          List.fold_right
+            (fun _ (types, n) ->
+              let t, n' = new_typevar n in
+              (t :: types, n'))
+            params ([], n)
+        in
+        let te1 =
+          List.fold_left2
+            (fun te param t -> (param, t) :: te)
+            te params param_types
+        in
+        let te2, t_value, theta1, n2 = aux te1 value n1 in
+        let te3 = subst_tyenv theta1 te2 in
+        let te4, t_body, theta2, n3 = aux ((name, t_value) :: te3) body n2 in
+        let theta3 = unify [ (t_body, TUnit) ] in
+        let te5 = subst_tyenv theta3 te4 in
+        let theta4 = compose_subst theta3 (compose_subst theta2 theta1) in
+        (te5, TUnit, theta4, n3)
+    | LetRec (name, params, value, body) ->
+        let param_types, n1 =
+          List.fold_right
+            (fun _ (types, n) ->
+              let t, n' = new_typevar n in
+              (t :: types, n'))
+            params ([], n)
+        in
+        let t_ret, n2 = new_typevar n1 in
+        let t_func =
+          List.fold_right
+            (fun t_arg t_acc -> TArrow (t_arg, t_acc))
+            param_types t_ret
+        in
+        let te1 = (name, t_func) :: te in
+        let te2 =
+          List.fold_left2
+            (fun te param t -> (param, t) :: te)
+            te1 params param_types
+        in
+        let te3, t_value, theta1, n3 = aux te2 value n2 in
+        let theta_func = unify [ (t_func, t_value) ] in
+        let te4 = subst_tyenv theta_func te3 in
+        let theta2 = compose_subst theta_func theta1 in
+        let te5, t_body, theta3, n4 = aux te4 body n3 in
+        let theta4 = unify [ (t_body, TUnit) ] in
+        let te6 = subst_tyenv theta4 te5 in
+        let theta_final = compose_subst theta4 (compose_subst theta3 theta2) in
+        (te6, TUnit, theta_final, n4)
+    | App (func_name, args) ->
+        let t_func =
+          try List.assoc func_name te
+          with Not_found -> failwith ("Unknown function: " ^ func_name)
+        in
+        let te', arg_types, theta', n' =
+          List.fold_left
+            (fun (te_acc, types_acc, theta_acc, n_acc) arg ->
+              let te_next, t_arg, theta_next, n_next = aux te_acc arg n_acc in
+              let t_arg' = subst_ty theta_acc t_arg in
+              let theta_acc' = compose_subst theta_next theta_acc in
+              ( subst_tyenv theta_acc' te_next,
+                types_acc @ [ t_arg' ],
+                theta_acc',
+                n_next ))
+            (te, [], theta0, n) args
+        in
+        let t_ret, n2 = new_typevar n' in
+        let t_func_expected =
+          List.fold_right
+            (fun t_arg t_acc -> TArrow (t_arg, t_acc))
+            arg_types t_ret
+        in
+        let theta_func = unify [ (t_func, t_func_expected) ] in
+        let te_final = subst_tyenv theta_func te' in
+        let theta_final = compose_subst theta_func theta' in
+        (te_final, subst_ty theta_final t_ret, theta_final, n2)
+    | rest -> failwith ("not implemented: " ^ string_of_ast rest)
   in
   aux [] e 0
