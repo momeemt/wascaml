@@ -14,6 +14,31 @@ type ty =
 type tyenv = (string * ty) list
 type tysubst = (tyvar * ty) list
 
+let string_of_ty t =
+  let rec aux t =
+    match t with
+    | TUnit -> "unit"
+    | TInt -> "int"
+    | TBool -> "bool"
+    | TString -> "string"
+    | TArrow (t1, t2) -> "(" ^ aux t1 ^ " -> " ^ aux t2 ^ ")"
+    | TVar s -> s
+    | TList t1 -> "(" ^ aux t1 ^ " list)"
+  in
+  aux t
+
+let rec string_of_tyenv tenv =
+  match tenv with
+  | (str, t) :: rest ->
+      Printf.sprintf "%s :: %s, " str (string_of_ty t) ^ string_of_tyenv rest
+  | [] -> ""
+
+let rec string_of_tysubst (tsubst : (tyvar * ty) list) =
+  match tsubst with
+  | (tyv, t) :: rest ->
+      (Printf.sprintf "%s :: %s, " tyv (string_of_ty t)) ^ string_of_tysubst rest
+  | [] -> ""
+
 let theta0 = ([] : tysubst)
 let new_typevar n = (TVar ("'a" ^ string_of_int n), n + 1)
 
@@ -72,18 +97,21 @@ let unify eql =
               solve ((t11, t21) :: (t12, t22) :: eql2) theta
           | TList t1, TList t2 -> solve ((t1, t2) :: eql2) theta
           | TVar s, _ ->
-              if occurs t1 t2 then failwith "unification failed"
+              if occurs t1 t2 then failwith ("unification failed: " ^ s)
               else
                 solve
                   (subst_eql [ (s, t2) ] eql2)
                   (compose_subst [ (s, t2) ] theta)
           | _, TVar s ->
-              if occurs t2 t1 then failwith "unification failed"
+              if occurs t2 t1 then failwith ("unification failed: " ^ s)
               else
                 solve
                   (subst_eql [ (s, t1) ] eql2)
                   (compose_subst [ (s, t1) ] theta)
-          | _, _ -> failwith "unification failed")
+          | t1, t2 ->
+              failwith
+                ("unification failed: " ^ string_of_ty t1 ^ " = "
+               ^ string_of_ty t2))
   in
   solve eql []
 
@@ -93,8 +121,8 @@ let tinf e =
     | IntLit _ -> (te, TInt, theta0, n)
     | StringLit _ -> (te, TString, theta0, n)
     | List [] ->
-        let t, n1 = new_typevar n in
-        (te, TList t, theta0, n1)
+        let t, new_n = new_typevar n in
+        (te, TList t, theta0, new_n)
     | List (h :: tl) ->
         let te1, t1, theta1, n1 = aux te h n in
         let te2, t2, theta2, n2 = aux te1 (List tl) n1 in
@@ -150,6 +178,7 @@ let tinf e =
         let theta3 = unify [ (t_body, TUnit) ] in
         let te5 = subst_tyenv theta3 te4 in
         let theta4 = compose_subst theta3 (compose_subst theta2 theta1) in
+        print_string (string_of_tyenv te5);
         (te5, TUnit, theta4, n3)
     | LetRec (name, params, value, body) ->
         let param_types, n1 =
@@ -181,6 +210,7 @@ let tinf e =
         let theta_final = compose_subst theta4 (compose_subst theta3 theta2) in
         (te6, TUnit, theta_final, n4)
     | App (func_name, args) ->
+        (* broken - App should have (Fun, params), not (String, params) *)
         let t_func =
           try List.assoc func_name te
           with Not_found -> failwith ("Unknown function: " ^ func_name)
@@ -209,4 +239,13 @@ let tinf e =
         (te_final, subst_ty theta_final t_ret, theta_final, n2)
     | rest -> failwith ("not implemented: " ^ string_of_ast rest)
   in
-  aux [] e 0
+  let t1, t2, t3, t4 =
+    aux
+      [
+        ("print_int32", TArrow (TInt, TUnit));
+        ("print_string", TArrow (TString, TUnit));
+      ]
+      e 1
+  in
+  print_string (string_of_tyenv t1);
+  (t1, t2, t3, t4)

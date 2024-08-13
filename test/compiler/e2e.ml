@@ -1,6 +1,7 @@
 open Compiler.Codegen
 open Compiler.Parser
 open Compiler.Tokenizer
+open Compiler.Inferer
 
 let rec find_project_root current_dir =
   let dune_project_path = Filename.concat current_dir "dune-project" in
@@ -15,6 +16,7 @@ let exec_code code test_name =
   let tokens = tokenize code in
   let ast = parse tokens in
   let wat = codegen ast in
+  (* let _ = tinf ast in *)
   let filename =
     find_project_root (Sys.getcwd ())
     ^ "/test/compiler/tmp/" ^ test_name ^ ".wat"
