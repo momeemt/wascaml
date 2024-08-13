@@ -242,7 +242,20 @@ let list_hd =
     params = [ (Some "lst_addr", I32) ];
     locals = [];
     results = [ I32 ];
-    body = [ LocalGet "lst_addr"; I32Load ];
+    body =
+      string_to_instrs "[PSan : list_hd] called\n"
+      @ [ Call "print_stderr_string"; LocalGet "lst_addr"; I32Load ];
+  }
+
+let list_next =
+  {
+    name = "list_next";
+    params = [ (Some "lst_addr", I32) ];
+    locals = [];
+    results = [ I32 ];
+    body =
+      string_to_instrs "[PSan : list_next] called\n"
+      @ [ Call "print_stderr_string"; LocalGet "lst_addr"; I32Const 4; I32Add ];
   }
 
 let list_length =

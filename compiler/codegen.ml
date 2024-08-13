@@ -188,6 +188,7 @@ let codegen ast te =
       |> add "print_stderr_string" ("print_stderr_string", Func)
       |> add "list_length" ("list_length", Func)
       |> add "list_hd" ("list_hd", Func)
+      |> add "list_next" ("list_next", Func)
       |> add "discard" ("discard", Func))
   in
   let funcs, _ =
@@ -214,6 +215,7 @@ let codegen ast te =
           print_stderr_string;
           list_length;
           list_hd;
+          list_next;
           discard;
         ]
         @ (Funcs.bindings funcs |> List.map snd);

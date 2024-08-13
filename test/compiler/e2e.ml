@@ -140,8 +140,19 @@ let () =
       ("list_hd_1", [ test_case "list_hd_1" "print_int32 (list_hd [1 2 3])" 1 ]);
       ( "list_hd_2",
         [
-          test_case "list_hd_2" "let head lst = list_hd lst in print_int32 (head [10 11 12])"
-            10;
+          test_case "list_hd_2"
+            "let head lst = list_hd lst in print_int32 (head [10 11 12])" 10;
+        ] );
+      ( "list_next_1",
+        [
+          test_case "list_next_1" "print_int32 (list_hd (list_next [1 2 3]))" 2;
+        ] );
+      ( "list_next_2",
+        [
+          test_case "list_next_2"
+            "let rec get x lst = if x = 0 then list_hd lst else get (x-1) \
+             (list_next lst) in print_int32 (get 3 [1 2 3 4])"
+            4;
         ] );
       ( "string_1",
         [

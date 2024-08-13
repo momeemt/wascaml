@@ -278,9 +278,9 @@ let tinf e =
         ("print_list", TArrow (TList (TVar "'list"), TUnit));
         ("list_length", TArrow (TList (TVar "'list"), TInt));
         ("discard", TArrow (TVar "'discard", TUnit));
-        ("list_hd", TArrow (TList (TInt), TInt))
+        ("list_hd", TArrow (TList (TInt), TInt));
+        ("list_next", TArrow (TList (TInt), TList (TInt)))
       ]
       e 1
   in
-  print_string (string_of_tyenv t1);
   (t1, t2, t3, t4)
