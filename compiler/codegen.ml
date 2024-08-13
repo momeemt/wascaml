@@ -1,7 +1,7 @@
 open Ast
+open Builtin
 open Runtime.Instructions
 open Runtime.Modules
-open Runtime.Utils
 open Runtime.Wasi
 
 exception CodegenError of string

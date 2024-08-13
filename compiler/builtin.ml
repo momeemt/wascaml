@@ -1,5 +1,5 @@
-open Modules
-open Instructions
+open Runtime.Modules
+open Runtime.Instructions
 
 let int32_to_ascii =
   {
@@ -304,3 +304,4 @@ let print_list =
             ] );
       ];
   }
+
