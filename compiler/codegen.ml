@@ -112,8 +112,12 @@ let codegen ast =
         in
         let next_addr = addr + 4 in
         let new_func_body =
-          new_func_body @ [ I32Const next_addr ] @ lst_expr_instr
-          @ [ I32Store; I32Const addr ]
+          new_func_body @ [ I32Const next_addr ] @ lst_expr_instr @ [ I32Store ]
+          @ string_to_instrs "[PSan : cons] => "
+          @ [ Call "print_stderr_string" ]
+          @ [ I32Const addr; Call "print_stderr_list" ]
+          @ string_to_instrs "\n"
+          @ [ Call "print_stderr_string"; I32Const addr ]
         in
         ( Funcs.add func_name { func with body = new_func_body } funcs,
           next_addr + 4 )
