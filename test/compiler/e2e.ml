@@ -137,6 +137,12 @@ let () =
           test_case_str "list_cons_3" "print_list (1 :: 2 :: 3 :: [])"
             "[1, 2, 3]\n";
         ] );
+      ("list_hd_1", [ test_case "list_hd_1" "print_int32 (list_hd [1 2 3])" 1 ]);
+      ( "list_hd_2",
+        [
+          test_case "list_hd_2" "let head lst = list_hd lst in print_int32 (head [10 11 12])"
+            10;
+        ] );
       ( "string_1",
         [
           test_case_str "string_1" "print_string \"Hello, World!\""

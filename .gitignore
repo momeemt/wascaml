@@ -33,4 +33,5 @@ _opam/
 .direnv
 result
 
-test.ml
+tmp/
+

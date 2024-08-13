@@ -278,6 +278,7 @@ let tinf e =
         ("print_list", TArrow (TList (TVar "'list"), TUnit));
         ("list_length", TArrow (TList (TVar "'list"), TInt));
         ("discard", TArrow (TVar "'discard", TUnit));
+        ("list_hd", TArrow (TList (TInt), TInt))
       ]
       e 1
   in

@@ -236,6 +236,15 @@ let discard =
     body = [ LocalGet "num"; Drop ];
   }
 
+let list_hd =
+  {
+    name = "list_hd";
+    params = [ (Some "lst_addr", I32) ];
+    locals = [];
+    results = [ I32 ];
+    body = [ LocalGet "lst_addr"; I32Load ];
+  }
+
 let list_length =
   {
     name = "list_length";
@@ -245,7 +254,11 @@ let list_length =
     body =
       [ I32Const 0; LocalSet "cnt"; LocalGet "lst_addr"; LocalSet "buffer" ]
       @ string_to_instrs "[PSan : list_length] => "
-      @ [ Call "print_stderr_string"; LocalGet "buffer"; Call "print_stderr_int32" ]
+      @ [
+          Call "print_stderr_string";
+          LocalGet "buffer";
+          Call "print_stderr_int32";
+        ]
       @ string_to_instrs " "
       @ [ Call "print_stderr_string" ]
       @ [ LocalGet "lst_addr"; Call "print_stderr_list" ]
