@@ -1,5 +1,6 @@
 open Ast
 open Builtin
+open Inferer
 open Runtime.Instructions
 open Runtime.Modules
 open Runtime.Wasi
@@ -11,7 +12,7 @@ module Env = Map.Make (String)
 
 type identifierKind = Func | Arg
 
-let codegen ast =
+let codegen ast te =
   let rec aux func_name funcs env expr addr =
     let aux_if cond then_ else_ addr =
       let cond_funcs, addr = aux func_name funcs env cond addr in
@@ -42,7 +43,9 @@ let codegen ast =
           {
             name = rand_name;
             params = List.map (fun param -> (Some param, I32)) params;
-            results = [ I32 ];
+            results =
+              (let ty = lookup name te in
+               match ty with TUnit -> [] | _ -> [ I32 ]);
             body = [];
             locals = [];
           }

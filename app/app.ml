@@ -17,8 +17,8 @@ let () =
     close_in in_channel;
     let tokens = tokenize source_code in
     let ast = parse tokens in
-    let _ = tinf ast in
-    let wat = codegen ast in
+    let (te, _, _, _) = tinf ast in
+    let wat = codegen ast te in
     let out_channel = open_out wat_file in
     output_string out_channel wat;
     close_out out_channel;

@@ -15,8 +15,8 @@ let rec find_project_root current_dir =
 let exec_code code test_name =
   let tokens = tokenize code in
   let ast = parse tokens in
-  let wat = codegen ast in
-  let _ = tinf ast in
+  let te, _, _, _ = tinf ast in
+  let wat = codegen ast te in
   let filename =
     find_project_root (Sys.getcwd ())
     ^ "/test/compiler/tmp/" ^ test_name ^ ".wat"
@@ -110,24 +110,28 @@ let () =
       ( "sequence_2",
         [
           test_case_str "sequence_2"
-            "print_int32 (if 1 = 2 then 3 else 4); \
-             print_string \", \"; \
-             print_int32 (let x = 10 in x + 20); \
-             print_string \", \"; \
+            "print_int32 (if 1 = 2 then 3 else 4); print_string \", \"; \
+             print_int32 (let x = 10 in x + 20); print_string \", \"; \
              print_int32 (3 * 8)"
             "4, 30, 24\n";
         ] );
-      ("list_1", [ test_case_str "list_1" "print_list [1 2 3 4 5]" "[1, 2, 3, 4, 5]\n" ]);
+      ( "list_1",
+        [ test_case_str "list_1" "print_list [1 2 3 4 5]" "[1, 2, 3, 4, 5]\n" ]
+      );
       ( "list_length_1",
         [ test_case "list_length_1" "print_int32 (list_length [10 20 30])" 3 ]
       );
       ( "list_length_2",
         [ test_case "list_length_2" "print_int32 (list_length [])" 0 ] );
       ( "list_cons_1",
-        [ test_case_str "list_cons_1" "print_list (1 :: [2 3 4 5])" "[1, 2, 3, 4, 5]\n" ] );
+        [
+          test_case_str "list_cons_1" "print_list (1 :: [2 3 4 5])"
+            "[1, 2, 3, 4, 5]\n";
+        ] );
       ( "list_cons_2",
-        [ test_case_str "list_cons_2" "print_list (1 :: 2 :: [3])" "[1, 2, 3]\n" ]
-      );
+        [
+          test_case_str "list_cons_2" "print_list (1 :: 2 :: [3])" "[1, 2, 3]\n";
+        ] );
       ( "list_cons_3",
         [
           test_case_str "list_cons_3" "print_list (1 :: 2 :: 3 :: [])"
@@ -141,8 +145,8 @@ let () =
       ( "string_2",
         [
           test_case_str "string_2"
-            "print_string \"# Todo\n\"; print_string \"- File I/O\n\"; \
-             print_string \"- ref\""
-            "# Todo\n- File I/O\n- ref\n";
+            "print_string \"# Todo\n\
+             \"; print_string \"- File I/O\n\
+             \"; print_string \"- ref\"" "# Todo\n- File I/O\n- ref\n";
         ] );
     ]
