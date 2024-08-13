@@ -109,25 +109,28 @@ let () =
       ( "sequence_2",
         [
           test_case_str "sequence_2"
-            "print_int32 (if 1 = 2 then 3 else 4); print_int32 (let x = 10 in \
-             x + 20); print_int32 (3 * 8)"
-            "4\n30\n24\n";
+            "print_int32 (if 1 = 2 then 3 else 4); \
+             print_string \", \"; \
+             print_int32 (let x = 10 in x + 20); \
+             print_string \", \"; \
+             print_int32 (3 * 8)"
+            "4, 30, 24\n";
         ] );
-      ("list_1", [ test_case_str "list_1" "print_list [1 2 3]" "1\n2\n3\n" ]);
+      ("list_1", [ test_case_str "list_1" "print_list [1 2 3]" "[1, 2, 3]\n" ]);
       ( "list_length_1",
         [ test_case "list_length_1" "print_int32 (list_length [10 20 30])" 3 ]
       );
       ( "list_length_2",
         [ test_case "list_length_2" "print_int32 (list_length [])" 0 ] );
       ( "list_cons_1",
-        [ test_case_str "list_cons_1" "print_list (1 :: [2 3])" "1\n2\n3\n" ] );
+        [ test_case_str "list_cons_1" "print_list (1 :: [2 3])" "[1, 2, 3]\n" ] );
       ( "list_cons_2",
-        [ test_case_str "list_cons_2" "print_list (1 :: 2 :: [3])" "1\n2\n3\n" ]
+        [ test_case_str "list_cons_2" "print_list (1 :: 2 :: [3])" "[1, 2, 3]\n" ]
       );
       ( "list_cons_3",
         [
           test_case_str "list_cons_3" "print_list (1 :: 2 :: 3 :: [])"
-            "1\n2\n3\n";
+            "[1, 2, 3]\n";
         ] );
       ( "string_1",
         [
@@ -137,7 +140,7 @@ let () =
       ( "string_2",
         [
           test_case_str "string_2"
-            "print_string \"# Todo\"; print_string \"- File I/O\"; \
+            "print_string \"# Todo\n\"; print_string \"- File I/O\n\"; \
              print_string \"- ref\""
             "# Todo\n- File I/O\n- ref\n";
         ] );

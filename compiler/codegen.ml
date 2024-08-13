@@ -107,10 +107,16 @@ let codegen ast =
         let lst_expr_instr = (Funcs.find func_name lst_funcs).body in
         let cons_funcs, addr = aux func_name lst_funcs env cons addr in
         let cons_expr_instr = (Funcs.find func_name cons_funcs).body in
-        let new_func_body = [I32Const addr] @ cons_expr_instr @ [I32Store] in
+        let new_func_body =
+          [ I32Const addr ] @ cons_expr_instr @ [ I32Store ]
+        in
         let next_addr = addr + 4 in
-        let new_func_body = new_func_body @ [I32Const next_addr] @ lst_expr_instr @ [I32Store; I32Const addr] in
-        (Funcs.add func_name { func with body = new_func_body } funcs, next_addr + 4)
+        let new_func_body =
+          new_func_body @ [ I32Const next_addr ] @ lst_expr_instr
+          @ [ I32Store; I32Const addr ]
+        in
+        ( Funcs.add func_name { func with body = new_func_body } funcs,
+          next_addr + 4 )
     | App (name, args) ->
         let func = Funcs.find func_name funcs in
         let funcs, args_instrs, end_addr =
@@ -168,8 +174,11 @@ let codegen ast =
     Env.(
       empty
       |> add "print_int32" ("print_int32", Func)
+      |> add "print_stderr_int32" ("print_stderr_int32", Func)
       |> add "print_list" ("print_list", Func)
+      |> add "print_stderr_list" ("print_stderr_list", Func)
       |> add "print_string" ("print_string", Func)
+      |> add "print_stderr_string" ("print_stderr_string", Func)
       |> add "list_length" ("list_length", Func)
       |> add "discard" ("discard", Func))
   in
@@ -190,8 +199,11 @@ let codegen ast =
         [
           int32_to_ascii;
           print_int32;
+          print_stderr_int32;
           print_list;
+          print_stderr_list;
           print_string;
+          print_stderr_string;
           list_length;
           discard;
         ]

@@ -1,6 +1,21 @@
 open Runtime.Modules
 open Runtime.Instructions
 
+let string_to_instrs str =
+  let open List in
+  let open Char in
+  let open Runtime.Instructions in
+  let start_addr = 0 in
+  let new_func_body, _ =
+    fold_left
+      (fun (acc, addr) c ->
+        (acc @ [ I32Const addr; I32Const (code c); I32Store ], addr + 1))
+      ( [ I32Const start_addr; I32Const (String.length str); I32Store ],
+        start_addr + 1 )
+      (init (String.length str) (String.get str))
+  in
+  new_func_body @ [ I32Const start_addr ]
+
 let int32_to_ascii =
   {
     name = "int32_to_ascii";
@@ -122,9 +137,9 @@ let int32_to_ascii =
       ];
   }
 
-let print_string =
+let write_string name out =
   {
-    name = "print_string";
+    name;
     params = [ (Some "str_addr", I32) ];
     locals = [ (Some "length", I32); (Some "buffer", I32) ];
     results = [];
@@ -143,22 +158,7 @@ let print_string =
         I32Const 104;
         LocalGet "length";
         I32Store;
-        I32Const 1;
-        I32Const 100;
-        I32Const 1;
-        I32Const 108;
-        Call "fd_write";
-        Drop;
-        I32Const 0;
-        I32Const 10;
-        I32Store;
-        I32Const 100;
-        I32Const 0;
-        I32Store;
-        I32Const 104;
-        I32Const 1;
-        I32Store;
-        I32Const 1;
+        I32Const out;
         I32Const 100;
         I32Const 1;
         I32Const 108;
@@ -167,9 +167,12 @@ let print_string =
       ];
   }
 
-let print_int32 =
+let print_string = write_string "print_string" 1
+let print_stderr_string = write_string "print_stderr_string" 2
+
+let write_int32 name out =
   {
-    name = "print_int32";
+    name;
     params = [ (Some "num", I32) ];
     locals = [ (Some "buffer", I32); (Some "length", I32) ];
     results = [];
@@ -193,33 +196,36 @@ let print_int32 =
         I32Sub;
         I32Store;
         (* call fd_write *)
-        I32Const 1;
+        I32Const out;
         I32Const 100;
         I32Const 1;
         I32Const 108;
         Call "fd_write";
         Drop;
-        (* add newline *)
-        I32Const 0;
-        I32Const 10;
-        I32Store;
-        (* iov_base <- buffer *)
-        I32Const 100;
-        I32Const 0;
-        I32Store;
-        (* iov_len <- length - buffer *)
-        I32Const 104;
-        I32Const 1;
-        I32Store;
-        (* call fd_write *)
-        I32Const 1;
-        I32Const 100;
-        I32Const 1;
-        I32Const 108;
-        Call "fd_write";
-        Drop;
+        (* (1* add newline *1) *)
+        (* I32Const 0; *)
+        (* I32Const 10; *)
+        (* I32Store; *)
+        (* (1* iov_base <- buffer *1) *)
+        (* I32Const 100; *)
+        (* I32Const 0; *)
+        (* I32Store; *)
+        (* (1* iov_len <- length - buffer *1) *)
+        (* I32Const 104; *)
+        (* I32Const 1; *)
+        (* I32Store; *)
+        (* (1* call fd_write *1) *)
+        (* I32Const out; *)
+        (* I32Const 100; *)
+        (* I32Const 1; *)
+        (* I32Const 108; *)
+        (* Call "fd_write"; *)
+        (* Drop; *)
       ];
   }
+
+let print_int32 = write_int32 "print_int32" 1
+let print_stderr_int32 = write_int32 "print_stderr_int32" 2
 
 let discard =
   {
@@ -237,71 +243,88 @@ let list_length =
     locals = [ (Some "cnt", I32); (Some "buffer", I32) ];
     results = [ I32 ];
     body =
-      [
-        I32Const 0;
-        LocalSet "cnt";
-        LocalGet "lst_addr";
-        LocalSet "buffer";
-        Block
-          ( "exit",
-            [
-              Loop
-                ( "loop",
-                  [
-                    LocalGet "buffer";
-                    I32Const (-1);
-                    I32Eq;
-                    BrIf "exit";
-                    LocalGet "cnt";
-                    I32Const 1;
-                    I32Add;
-                    LocalSet "cnt";
-                    LocalGet "buffer";
-                    I32Const 4;
-                    I32Add;
-                    I32Load;
-                    LocalSet "buffer";
-                    Br "loop";
-                  ] );
-            ] );
-        LocalGet "cnt";
-      ];
+      [ I32Const 0; LocalSet "cnt"; LocalGet "lst_addr"; LocalSet "buffer" ]
+      @ string_to_instrs "[PSan : list_length] => "
+      @ [ Call "print_stderr_string" ]
+      @ [ LocalGet "lst_addr"; Call "print_stderr_list" ]
+      @ string_to_instrs "\n"
+      @ [ Call "print_stderr_string" ]
+      @ [
+          Block
+            ( "exit",
+              [
+                Loop
+                  ( "loop",
+                    [
+                      LocalGet "buffer";
+                      I32Const (-1);
+                      I32Eq;
+                      BrIf "exit";
+                      LocalGet "cnt";
+                      I32Const 1;
+                      I32Add;
+                      LocalSet "cnt";
+                      LocalGet "buffer";
+                      I32Const 4;
+                      I32Add;
+                      I32Load;
+                      LocalSet "buffer";
+                      Br "loop";
+                    ] );
+              ] );
+          LocalGet "cnt";
+        ];
   }
 
-let print_list =
+let write_list name out =
   {
-    name = "print_list";
+    name;
     params = [ (Some "lst_addr", I32) ];
     locals = [ (Some "buffer", I32) ];
     results = [];
     body =
-      [
-        LocalGet "lst_addr";
-        LocalSet "buffer";
-        Block
-          ( "exit",
-            [
-              Loop
-                ( "loop",
-                  [
-                    LocalGet "buffer";
-                    I32Load;
-                    Call "print_int32";
-                    LocalGet "buffer";
-                    I32Const 4;
-                    I32Add;
-                    LocalSet "buffer";
-                    LocalGet "buffer";
-                    I32Load;
-                    I32Const (-1);
-                    I32Eq;
-                    BrIf "exit";
-                    LocalGet "buffer";
-                    I32Load;
-                    LocalSet "buffer";
-                    Br "loop";
-                  ] );
-            ] );
-      ];
+      [ LocalGet "lst_addr"; LocalSet "buffer" (* output [ *) ]
+      @ string_to_instrs "["
+      @ [
+          (if out = 1 then Call "print_string" else Call "print_stderr_string");
+          Block
+            ( "exit",
+              [
+                Loop
+                  ( "loop",
+                    [
+                      LocalGet "buffer";
+                      I32Const (-1);
+                      I32Eq;
+                      BrIf "exit";
+                      LocalGet "buffer";
+                      I32Load;
+                      (if out = 1 then Call "print_int32"
+                       else Call "print_stderr_int32");
+                      LocalGet "buffer";
+                      I32Const 4;
+                      I32Add;
+                      I32Load;
+                      LocalSet "buffer";
+                      LocalGet "buffer";
+                      I32Const (-1);
+                      I32Eq;
+                      BrIf "exit";
+                    ]
+                    (* output ", " *) @ string_to_instrs ", "
+                    @ [
+                        (if out = 1 then Call "print_string"
+                         else Call "print_stderr_string");
+                        Br "loop";
+                      ] );
+              ] );
+          (* output ] *)
+        ]
+      @ string_to_instrs "]"
+      @ [
+          (if out = 1 then Call "print_string" else Call "print_stderr_string");
+        ];
   }
 
+let print_list = write_list "print_list" 1
+let print_stderr_list = write_list "print_stderr_list" 2

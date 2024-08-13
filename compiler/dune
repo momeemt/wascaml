@@ -2,4 +2,4 @@
  (name compiler)
  (public_name wascaml.compiler)
  (modules ast builtin codegen inferer parser tokenizer tokens)
- (libraries wascaml.runtime))
+ (libraries wascaml.runtime wascaml.sanitizer))

@@ -1,7 +1,7 @@
 open Compiler.Tokenizer
 open Compiler.Parser
 open Compiler.Codegen
-open Compiler.Inferer
+(* open Compiler.Inferer *)
 
 let () =
   if Array.length Sys.argv <> 2 then
@@ -17,7 +17,7 @@ let () =
     close_in in_channel;
     let tokens = tokenize source_code in
     let ast = parse tokens in
-    let _ = tinf ast in
+    (* let _ = tinf ast in *)
     let wat = codegen ast in
     let out_channel = open_out wat_file in
     output_string out_channel wat;
