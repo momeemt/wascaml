@@ -1,7 +1,6 @@
 open Compiler.Codegen
 open Compiler.Parser
 open Compiler.Tokenizer
-open Compiler.Inferer
 
 let rec find_project_root current_dir =
   let dune_project_path = Filename.concat current_dir "dune-project" in
