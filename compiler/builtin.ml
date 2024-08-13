@@ -255,7 +255,13 @@ let list_next =
     results = [ I32 ];
     body =
       string_to_instrs "[PSan : list_next] called\n"
-      @ [ Call "print_stderr_string"; LocalGet "lst_addr"; I32Const 4; I32Add ];
+      @ [
+          Call "print_stderr_string";
+          LocalGet "lst_addr";
+          I32Const 4;
+          I32Add;
+          I32Load;
+        ];
   }
 
 let list_length =
