@@ -126,22 +126,35 @@ let codegen ast te =
           next_addr + 4 )
     | Append (lst1, lst2) ->
         let func = Funcs.find func_name funcs in
-        let lst1_funcs, addr = aux func_name funcs env lst1 addr in
+        let lst1_funcs, lst2_addr = aux func_name funcs env lst1 addr in
         let lst1_expr_instr = (Funcs.find func_name lst1_funcs).body in
-        let lst2_funcs, addr = aux func_name lst1_funcs env lst2 addr in
+        let lst2_funcs, lst_result_addr =
+          aux func_name lst1_funcs env lst2 lst2_addr
+        in
         let lst2_expr_instr = (Funcs.find func_name lst2_funcs).body in
         let new_func_body =
-          lst2_expr_instr @ lst1_expr_instr
+          string_to_instrs "[PSan : append] => "
+          @ [ Call "print_stderr_string" ]
+          @ lst1_expr_instr
+          @ [ Call "print_stderr_list" ]
+          @ string_to_instrs " @ "
+          @ [ Call "print_stderr_string" ]
+          @ lst2_expr_instr
+          @ [ Call "print_stderr_list" ]
+          @ string_to_instrs "\n"
+          @ [ Call "print_stderr_string" ]
+          @ lst2_expr_instr @ lst1_expr_instr
           @ [
-              I32Const addr;
+              I32Const lst_result_addr;
               Call "list_copy_continue";
               I32Load;
               Call "list_copy";
               Drop;
-              I32Const addr;
+              I32Const lst_result_addr;
             ]
         in
-        (Funcs.add func_name { func with body = new_func_body } lst2_funcs, addr)
+        ( Funcs.add func_name { func with body = new_func_body } lst2_funcs,
+          lst_result_addr )
     | App (name, args) ->
         let func = Funcs.find func_name funcs in
         let funcs, args_instrs, end_addr =
