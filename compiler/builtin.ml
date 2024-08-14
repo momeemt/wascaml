@@ -264,6 +264,64 @@ let list_next =
         ];
   }
 
+let list_copy =
+  {
+    name = "list_copy";
+    params = [ (Some "lst_addr", I32); (Some "new_lst_addr", I32) ];
+    locals = [ (Some "lst_buffer", I32); (Some "new_lst_buffer", I32) ];
+    results = [ I32 ];
+    body =
+      [
+        LocalGet "lst_addr";
+        LocalSet "lst_buffer";
+        LocalGet "new_lst_addr";
+        LocalSet "new_lst_buffer";
+        Block
+          ( "exit",
+            [
+              Loop
+                ( "loop",
+                  [
+                    LocalGet "lst_buffer";
+                    I32Const (-1);
+                    I32Eq;
+                    BrIf "exit";
+                    LocalGet "new_lst_buffer";
+                    LocalGet "lst_buffer";
+                    I32Load;
+                    I32Store;
+                    LocalGet "new_lst_buffer";
+                    I32Const 4;
+                    I32Add;
+                    LocalSet "new_lst_buffer";
+                    LocalGet "lst_buffer";
+                    I32Const 4;
+                    I32Add;
+                    I32Load;
+                    LocalSet "lst_buffer";
+                    LocalGet "new_lst_buffer";
+                    LocalGet "new_lst_buffer";
+                    I32Const 4;
+                    I32Add;
+                    I32Store;
+                    LocalGet "new_lst_buffer";
+                    I32Const 4;
+                    I32Add;
+                    LocalSet "new_lst_buffer";
+                    Br "loop";
+                  ] );
+            ] );
+        LocalGet "new_lst_buffer";
+        I32Const 4;
+        I32Sub;
+        LocalSet "new_lst_buffer";
+        LocalGet "new_lst_buffer";
+        I32Const (-1);
+        I32Store;
+        LocalGet "new_lst_addr";
+      ];
+  }
+
 let list_length =
   {
     name = "list_length";

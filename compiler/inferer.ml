@@ -117,6 +117,7 @@ let unify eql =
 
 let tinf e =
   let rec aux te e n =
+    Printf.printf "te: %s\n" (string_of_tyenv te);
     match e with
     | IntLit _ -> (te, TInt, theta0, n)
     | StringLit _ -> (te, TString, theta0, n)
@@ -135,7 +136,8 @@ let tinf e =
                 t_acc @ [ t_next' ],
                 theta_acc',
                 n_next ))
-            (te1, [], theta0, n1) tl in
+            (te1, [], theta0, n1) tl
+        in
         let _ = List.iter (fun t -> ignore (unify [ (t1, t) ])) types in
         let t11 = subst_ty theta2 t1 in
         let theta3 = unify [ (t11, t1) ] in
@@ -259,6 +261,8 @@ let tinf e =
             (fun t_arg t_acc -> TArrow (t_arg, t_acc))
             arg_types t_ret
         in
+        Printf.printf "t_func: %s\n" (string_of_ty t_func);
+        Printf.printf "t_func_expected: %s\n" (string_of_ty t_func_expected);
         let theta_func = unify [ (t_func, t_func_expected) ] in
         let te_final = subst_tyenv theta_func te' in
         let theta_final = compose_subst theta_func theta' in
@@ -283,11 +287,12 @@ let tinf e =
       [
         ("print_int32", TArrow (TInt, TUnit));
         ("print_string", TArrow (TString, TUnit));
-        ("print_list", TArrow (TList (TVar "'list"), TUnit));
-        ("list_length", TArrow (TList (TVar "'list"), TInt));
+        ("print_list", TArrow (TList TInt, TUnit));
+        ("list_length", TArrow (TList TInt, TInt));
         ("discard", TArrow (TVar "'discard", TUnit));
-        ("list_hd", TArrow (TList (TInt), TInt));
-        ("list_next", TArrow (TList (TInt), TList (TInt)))
+        ("list_hd", TArrow (TList TInt, TInt));
+        ("list_next", TArrow (TList TInt, TList TInt));
+        ("list_copy", TArrow (TList TInt, TArrow (TInt, TList TInt)));
       ]
       e 1
   in

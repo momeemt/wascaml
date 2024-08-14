@@ -231,6 +231,7 @@ let codegen ast te =
       |> add "list_length" ("list_length", Func)
       |> add "list_hd" ("list_hd", Func)
       |> add "list_next" ("list_next", Func)
+      |> add "list_copy" ("list_copy", Func)
       |> add "discard" ("discard", Func))
   in
   let funcs, _ =
@@ -258,6 +259,7 @@ let codegen ast te =
           list_length;
           list_hd;
           list_next;
+          list_copy;
           discard;
         ]
         @ (Funcs.bindings funcs |> List.map snd);

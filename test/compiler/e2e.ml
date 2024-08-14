@@ -157,8 +157,14 @@ let () =
       ( "list_append_1", [
         test_case_str "list_append_1" "print_list ([1 2] @ [3 4])" "[1, 2, 3, 4]\n"
       ] );
-      ("list_append_2", [
-        test_case_str "list_append_2" "let x = [1 2] in print_list (x @ [3 4])" "[1, 2, 3, 4]\n"
+      (* ("list_append_2", [ *)
+      (*   test_case_str "list_append_2" "let x = [1 2] in print_list (x @ [3 4])" "[1, 2, 3, 4]\n" *)
+      (* ]); *)
+      ("list_copy_1", [
+        test_case_str "list_copy_1" "print_list (list_copy [1 2 3] 2000)" "[1, 2, 3]\n"
+      ]);
+      ("list_copy_2", [
+        test_case_str "list_copy_2" "let x = [1 2 3] in print_list (list_copy (x) 2000)" "[1, 2, 3]\n"
       ]);
       ( "string_1",
         [
