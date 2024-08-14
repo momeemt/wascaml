@@ -8,6 +8,7 @@ type token =
   | Greater  (** The '>' operator *)
   | NotEqual  (** The '<>' operator *)
   | SemiColon  (** The ';' operator *)
+  | AtSign  (** The '@' operator *)
   | Colon  (** The ':' operator *)
   | DoubleColon  (** The '::' operator *)
   | LeftParen  (** The '(' operator *)
@@ -84,6 +85,7 @@ let string_of_token token =
   | Less -> "Less"
   | Greater -> "Greater"
   | NotEqual -> "NotEqual"
+  | AtSign -> "AtSign"
   | SemiColon -> "SemiColon"
   | Colon -> "Colon"
   | DoubleColon -> "DoubleColon"

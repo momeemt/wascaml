@@ -109,6 +109,9 @@ and parse_mul_div_expr tokens =
 and parse_list_ops_expr tokens =
   let rec aux acc tokens =
     match tokens with
+    | AtSign :: tokens ->
+        let rhs, tokens = parse_expr tokens in
+        aux (Append (acc, rhs)) tokens
     | DoubleColon :: tokens ->
         let rhs, tokens = parse_expr tokens in
         aux (Cons (acc, rhs)) tokens

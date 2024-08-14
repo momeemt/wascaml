@@ -150,6 +150,14 @@ let tinf e =
         let te3 = subst_tyenv theta3 te2 in
         let theta4 = compose_subst theta3 (compose_subst theta2 theta1) in
         (te3, TList t11, theta4, n2)
+    | Append (l1, l2) ->
+        let te1, t1, theta1, n1 = aux te l1 n in
+        let te2, t2, theta2, n2 = aux te1 l2 n1 in
+        let t11 = subst_ty theta2 t1 in
+        let theta3 = unify [ (t2, t11) ] in
+        let te3 = subst_tyenv theta3 te2 in
+        let theta4 = compose_subst theta3 (compose_subst theta2 theta1) in
+        (te3, t2, theta4, n2)
     | Plus (e1, e2) | Minus (e1, e2) | Times (e1, e2) | Div (e1, e2) ->
         let te1, t1, theta1, n1 = aux te e1 n in
         let te2, t2, theta2, n2 = aux te1 e2 n1 in

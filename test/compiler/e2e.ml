@@ -154,6 +154,12 @@ let () =
              (list_next lst) in print_int32 (get 3 [1 2 3 4])"
             4;
         ] );
+      ( "list_append_1", [
+        test_case_str "list_append_1" "print_list ([1 2] @ [3 4])" "[1, 2, 3, 4]\n"
+      ] );
+      ("list_append_2", [
+        test_case_str "list_append_2" "let x = [1 2] in print_list (x @ [3 4])" "[1, 2, 3, 4]\n"
+      ]);
       ( "string_1",
         [
           test_case_str "string_1" "print_string \"Hello, World!\""

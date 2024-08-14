@@ -124,6 +124,48 @@ let codegen ast te =
         in
         ( Funcs.add func_name { func with body = new_func_body } funcs,
           next_addr + 4 )
+    | Append (lst1, lst2) ->
+        let func = Funcs.find func_name funcs in
+        let lst1_funcs, addr = aux func_name funcs env lst1 addr in
+        let lst1_expr_instr = (Funcs.find func_name lst1_funcs).body in
+        let lst2_funcs, addr = aux func_name lst1_funcs env lst2 addr in
+        let lst2_expr_instr = (Funcs.find func_name lst2_funcs).body in
+        let copy_lst1_instrs, new_addr =
+          let rec aux acc addr i instrs =
+            match instrs with
+            | [] -> (acc, addr)
+            | instr :: instrs ->
+                if i = 0 || i = 3 then
+                  aux (I32Const addr :: acc) (addr + 4) (i + 1) instrs
+                else if i = 4 then
+                  aux (I32Const addr :: acc) addr (i + 1) instrs
+                else if i = 5 then aux (instr :: acc) addr 0 instrs
+                else aux (instr :: acc) addr (i + 1) instrs
+          in
+          aux [] addr 0 lst1_expr_instr
+        in
+        let copy_lst1_instrs = List.tl copy_lst1_instrs in
+        let copy_lst2_instrs, _ =
+          let rec aux acc addr i instrs =
+            match instrs with
+            | [] -> (acc, addr)
+            | instr :: instrs ->
+                if i = 0 || i = 3 then
+                  aux (I32Const addr :: acc) (addr + 4) (i + 1) instrs
+                else if i = 4 && instr <> I32Const (-1) then
+                  aux (I32Const addr :: acc) addr (i + 1) instrs
+                else if i = 5 then aux (instr :: acc) addr 0 instrs
+                else aux (instr :: acc) addr (i + 1) instrs
+          in
+          aux [] (new_addr - 4) 0 lst2_expr_instr
+        in
+        let copy_lst2_instrs = List.tl copy_lst2_instrs in
+        let new_func_body =
+          lst1_expr_instr @ [ Drop ] @ lst2_expr_instr @ [ Drop ]
+          @ List.rev copy_lst1_instrs @ List.rev copy_lst2_instrs
+          @ [ I32Const addr ]
+        in
+        (Funcs.add func_name { func with body = new_func_body } lst2_funcs, addr)
     | App (name, args) ->
         let func = Funcs.find func_name funcs in
         let funcs, args_instrs, end_addr =

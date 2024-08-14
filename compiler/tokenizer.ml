@@ -78,6 +78,7 @@ let tokenize input =
           else aux (pos + 1) (Hyphen :: tokens)
       | '*' -> aux (pos + 1) (Asterisk :: tokens)
       | '/' -> aux (pos + 1) (Slash :: tokens)
+      | '@' -> aux (pos + 1) (AtSign :: tokens)
       | '=' -> aux (pos + 1) (Equal :: tokens)
       | '<' ->
           if pos + 1 < length && input.[pos + 1] = '>' then

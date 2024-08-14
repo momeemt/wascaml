@@ -18,6 +18,7 @@ type ast =
   | Times of ast * ast
   | Div of ast * ast
   | Cons of ast * ast
+  | Append of ast * ast
 
 let rec string_of_ast ast =
   match ast with
@@ -55,3 +56,5 @@ let rec string_of_ast ast =
       "Times (" ^ string_of_ast e1 ^ ", " ^ string_of_ast e2 ^ ")"
   | Div (e1, e2) -> "Div (" ^ string_of_ast e1 ^ ", " ^ string_of_ast e2 ^ ")"
   | Cons (e1, e2) -> "Cons (" ^ string_of_ast e1 ^ ", " ^ string_of_ast e2 ^ ")"
+  | Append (e1, e2) ->
+      "Append (" ^ string_of_ast e1 ^ ", " ^ string_of_ast e2 ^ ")"
