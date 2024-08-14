@@ -117,7 +117,6 @@ let unify eql =
 
 let tinf e =
   let rec aux te e n =
-    Printf.printf "te: %s\n" (string_of_tyenv te);
     match e with
     | IntLit _ -> (te, TInt, theta0, n)
     | StringLit _ -> (te, TString, theta0, n)
@@ -261,8 +260,6 @@ let tinf e =
             (fun t_arg t_acc -> TArrow (t_arg, t_acc))
             arg_types t_ret
         in
-        Printf.printf "t_func: %s\n" (string_of_ty t_func);
-        Printf.printf "t_func_expected: %s\n" (string_of_ty t_func_expected);
         let theta_func = unify [ (t_func, t_func_expected) ] in
         let te_final = subst_tyenv theta_func te' in
         let theta_final = compose_subst theta_func theta' in
@@ -293,6 +290,7 @@ let tinf e =
         ("list_hd", TArrow (TList TInt, TInt));
         ("list_next", TArrow (TList TInt, TList TInt));
         ("list_copy", TArrow (TList TInt, TArrow (TInt, TList TInt)));
+        ("list_copy_continue", TArrow (TList TInt, TArrow (TInt, TList TInt)));
       ]
       e 1
   in
