@@ -5,6 +5,7 @@ type instr =
   | IfVoid of expr * expr (* FIXME: hard code - result i32 *)
   | Br of string (* 0x0C *)
   | BrIf of string (* 0x0D *)
+  | Return (* 0x0F *)
   | Call of string (* 0x10 *)
   | Drop (* 0x1A *)
   | LocalGet of string (* 0x20 *)
@@ -18,6 +19,7 @@ type instr =
   | I32Const of int (* 0x41 *)
   | I32Eqz (* 0x45 *)
   | I32Eq (* 0x46 *)
+  | I32Ne (* 0x47 *)
   | I32LtU (* 0x49 *)
   | I32GtU (* 0x4B *)
   | I32GeU (* 0x4F *)
@@ -27,6 +29,8 @@ type instr =
   | I32DivS (* 0x6D *)
   | I32DivU (* 0x6E *)
   | I32RemU (* 0x70 *)
+  | I32And (* 0x71 *)
+  | I32Or (* 0x72 *)
 
 and expr = instr list
 
@@ -45,6 +49,7 @@ let rec string_of_instr instr =
         (string_of_exprs then_) (string_of_exprs else_)
   | Br label -> Printf.sprintf "br $%s" label
   | BrIf label -> Printf.sprintf "br_if $%s" label
+  | Return -> Printf.sprintf "return"
   | Call label -> Printf.sprintf "call $%s" label
   | Drop -> Printf.sprintf "drop"
   | LocalGet label -> Printf.sprintf "local.get $%s" label
@@ -58,6 +63,7 @@ let rec string_of_instr instr =
   | I32Const v -> Printf.sprintf "i32.const %d" v
   | I32Eqz -> "i32.eqz"
   | I32Eq -> "i32.eq"
+  | I32Ne -> "i32.ne"
   | I32LtU -> "i32.lt_u"
   | I32GtU -> "i32.gt_u"
   | I32GeU -> "i32.ge_u"
@@ -67,6 +73,8 @@ let rec string_of_instr instr =
   | I32DivS -> "i32.div_s"
   | I32DivU -> "i32.div_u"
   | I32RemU -> "i32.rem_u"
+  | I32And -> "i32.and"
+  | I32Or -> "i32.or"
 
 and string_of_exprs exprs = String.concat "\n" (List.map string_of_instr exprs)
 

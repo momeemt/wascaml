@@ -15,7 +15,7 @@ let rec find_project_root current_dir =
 let exec_code code test_name =
   let tokens = tokenize code in
   let ast = parse tokens in
-  let te, _, _, _, _ = tinf ast in
+  let te, _, _, _, ast = tinf ast in
   let wat = codegen ast te in
   let filename =
     find_project_root (Sys.getcwd ())
@@ -64,15 +64,30 @@ let () =
         [ test_case "equal_int_1" "print_int32 (if 0 = 0 then 1 else 2)" 1 ] );
       ( "equal_int_2",
         [ test_case "equal_int_2" "print_int32 (if 1 = 2 then 1 else 2)" 2 ] );
-      (* ( "equal_list_1", *)
+      ( "equal_list_1",
+        [
+          test_case "equal_list_1"
+            "print_int32 (if [1 2 3] = [1 2 3] then 1 else 2)" 1;
+        ] );
+      ( "equal_list_2",
+        [
+          test_case "equal_list_2"
+            "print_int32 (if [1 2 3] = [1] then 1 else 2)" 2;
+        ] );
+      ( "equal_list_3",
+        [
+          test_case "equal_list_3"
+            "let x = [1 2 3] in let y = [1 2] in print_int32 (if x = y then 1 \
+             else 2)"
+            2;
+        ] );
+      (* FIXME *)
+      (* ( "equal_list_4", *)
       (*   [ *)
-      (*     test_case "equal_list_1" *)
-      (*       "print_int32 (if [1 2 3] = [1 2 3] then 1 else 2)" 1; *)
-      (*   ] ); *)
-      (* ( "equal_list_2", *)
-      (*   [ *)
-      (*     test_case "equal_list_2" "print_int32 (if [1 2 3] = [] then 1 else 2)" *)
-      (*       2; *)
+      (*     test_case "equal_list_4" *)
+      (*       "let x = [1 2 3] in let y = [2 3] in let z = 1 :: y in print_int32 \ *)
+      (*        (if x = z then 1 else 2)" *)
+      (*       1; *)
       (*   ] ); *)
       ("if_1", [ test_case "if_1" "print_int32 (if 0 = 0 then 1 else 3)" 1 ]);
       ("if_2", [ test_case "if_2" "print_int32 (if 1 = 2 then 3 else 4)" 4 ]);
