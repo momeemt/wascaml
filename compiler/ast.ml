@@ -1,60 +1,81 @@
+open Types
+
 type ast =
-  | Let of string * string list * ast * ast
-  | LetRec of string * string list * ast * ast
-  | Fun of string * ast
-  | App of string * ast list
-  | Sequence of ast list
-  | IntLit of int
-  | FloatLit of float
-  | StringLit of string
-  | BoolLit of bool
-  | List of ast list
-  | If of ast * ast * ast
-  | Eq of ast * ast
-  | Less of ast * ast
-  | Greater of ast * ast
-  | Plus of ast * ast
-  | Minus of ast * ast
-  | Times of ast * ast
-  | Div of ast * ast
-  | Cons of ast * ast
-  | Append of ast * ast
+  | Let of ty * string * string list * ast * ast
+  | LetRec of ty * string * string list * ast * ast
+  | App of ty * string * ast list
+  | Fun of ty * string * ast
+  | Sequence of ty * ast list
+  | IntLit of ty * int
+  | FloatLit of ty * float
+  | StringLit of ty * string
+  | BoolLit of ty * bool
+  | List of ty * ast list
+  | If of ty * ast * ast * ast
+  | Eq of ty * ast * ast
+  | Less of ty * ast * ast
+  | Greater of ty * ast * ast
+  | Plus of ty * ast * ast
+  | Minus of ty * ast * ast
+  | Times of ty * ast * ast
+  | Div of ty * ast * ast
+  | Cons of ty * ast * ast
+  | Append of ty * ast * ast
 
 let rec string_of_ast ast =
   match ast with
-  | Let (id, args, e1, e2) ->
+  | Let (ty, id, args, e1, e2) ->
       "Let (" ^ id ^ ", [" ^ String.concat "; " args ^ "], " ^ string_of_ast e1
-      ^ ", " ^ string_of_ast e2 ^ ")"
-  | LetRec (f, args, e1, e2) ->
+      ^ ", " ^ string_of_ast e2 ^ ") : " ^ string_of_ty ty
+  | LetRec (ty, f, args, e1, e2) ->
       "LetRec (" ^ f ^ ", [" ^ String.concat "; " args ^ "], "
-      ^ string_of_ast e1 ^ ", " ^ string_of_ast e2 ^ ")"
-  | Fun (id, body) -> "Fun (" ^ id ^ ", " ^ string_of_ast body ^ ")"
-  | App (name, exprs) ->
+      ^ string_of_ast e1 ^ ", " ^ string_of_ast e2 ^ ") : " ^ string_of_ty ty
+  | App (ty, name, exprs) ->
       "App (" ^ name ^ ": "
       ^ (List.map (fun expr -> string_of_ast expr) exprs |> String.concat " ")
-      ^ ")"
-  | Sequence exprs ->
+      ^ ") : " ^ string_of_ty ty
+  | Fun (ty, arg, body) ->
+      "Fun (" ^ arg ^ ", " ^ string_of_ast body ^ ") : " ^ string_of_ty ty
+  | Sequence (ty, exprs) ->
       "Sequence ("
       ^ (List.map (fun expr -> string_of_ast expr) exprs |> String.concat ";")
-      ^ ")"
-  | IntLit n -> "IntLit (" ^ string_of_int n ^ ")"
-  | FloatLit f -> "FloatLit (" ^ string_of_float f ^ ")"
-  | StringLit s -> "StringLit(" ^ s ^ ")"
-  | BoolLit b -> "BoolLit (" ^ string_of_bool b ^ ")"
-  | List l -> "List (" ^ (List.map string_of_ast l |> String.concat "; ") ^ ")"
-  | If (e1, e2, e3) ->
+      ^ ") : " ^ string_of_ty ty
+  | IntLit (ty, n) -> "IntLit (" ^ string_of_int n ^ ") : " ^ string_of_ty ty
+  | FloatLit (ty, f) ->
+      "FloatLit (" ^ string_of_float f ^ ") : " ^ string_of_ty ty
+  | StringLit (ty, s) -> "StringLit(" ^ s ^ ") : " ^ string_of_ty ty
+  | BoolLit (ty, b) -> "BoolLit (" ^ string_of_bool b ^ ") : " ^ string_of_ty ty
+  | List (ty, l) ->
+      "List ("
+      ^ (List.map string_of_ast l |> String.concat "; ")
+      ^ ") : " ^ string_of_ty ty
+  | If (ty, e1, e2, e3) ->
       "If (" ^ string_of_ast e1 ^ ", " ^ string_of_ast e2 ^ ", "
-      ^ string_of_ast e3 ^ ")"
-  | Eq (e1, e2) -> "Eq (" ^ string_of_ast e1 ^ ", " ^ string_of_ast e2 ^ ")"
-  | Less (e1, e2) -> "Less (" ^ string_of_ast e1 ^ ", " ^ string_of_ast e2 ^ ")"
-  | Greater (e1, e2) ->
-      "Greater (" ^ string_of_ast e1 ^ ", " ^ string_of_ast e2 ^ ")"
-  | Plus (e1, e2) -> "Plus (" ^ string_of_ast e1 ^ ", " ^ string_of_ast e2 ^ ")"
-  | Minus (e1, e2) ->
-      "Minus (" ^ string_of_ast e1 ^ ", " ^ string_of_ast e2 ^ ")"
-  | Times (e1, e2) ->
-      "Times (" ^ string_of_ast e1 ^ ", " ^ string_of_ast e2 ^ ")"
-  | Div (e1, e2) -> "Div (" ^ string_of_ast e1 ^ ", " ^ string_of_ast e2 ^ ")"
-  | Cons (e1, e2) -> "Cons (" ^ string_of_ast e1 ^ ", " ^ string_of_ast e2 ^ ")"
-  | Append (e1, e2) ->
-      "Append (" ^ string_of_ast e1 ^ ", " ^ string_of_ast e2 ^ ")"
+      ^ string_of_ast e3 ^ ") : " ^ string_of_ty ty
+  | Eq (ty, e1, e2) ->
+      "Eq (" ^ string_of_ast e1 ^ ", " ^ string_of_ast e2 ^ ") : "
+      ^ string_of_ty ty
+  | Less (ty, e1, e2) ->
+      "Less (" ^ string_of_ast e1 ^ ", " ^ string_of_ast e2 ^ ") : "
+      ^ string_of_ty ty
+  | Greater (ty, e1, e2) ->
+      "Greater (" ^ string_of_ast e1 ^ ", " ^ string_of_ast e2 ^ ") : "
+      ^ string_of_ty ty
+  | Plus (ty, e1, e2) ->
+      "Plus (" ^ string_of_ast e1 ^ ", " ^ string_of_ast e2 ^ ") : "
+      ^ string_of_ty ty
+  | Minus (ty, e1, e2) ->
+      "Minus (" ^ string_of_ast e1 ^ ", " ^ string_of_ast e2 ^ ") : "
+      ^ string_of_ty ty
+  | Times (ty, e1, e2) ->
+      "Times (" ^ string_of_ast e1 ^ ", " ^ string_of_ast e2 ^ ") : "
+      ^ string_of_ty ty
+  | Div (ty, e1, e2) ->
+      "Div (" ^ string_of_ast e1 ^ ", " ^ string_of_ast e2 ^ ") : "
+      ^ string_of_ty ty
+  | Cons (ty, e1, e2) ->
+      "Cons (" ^ string_of_ast e1 ^ ", " ^ string_of_ast e2 ^ ") : "
+      ^ string_of_ty ty
+  | Append (ty, e1, e2) ->
+      "Append (" ^ string_of_ast e1 ^ ", " ^ string_of_ast e2 ^ ") : "
+      ^ string_of_ty ty

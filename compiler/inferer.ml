@@ -1,43 +1,5 @@
 open Ast
-
-type tyvar = string
-
-type ty =
-  | TUnit
-  | TInt
-  | TBool
-  | TString
-  | TArrow of ty * ty
-  | TVar of tyvar
-  | TList of ty
-
-type tyenv = (string * ty) list
-type tysubst = (tyvar * ty) list
-
-let string_of_ty t =
-  let rec aux t =
-    match t with
-    | TUnit -> "unit"
-    | TInt -> "int"
-    | TBool -> "bool"
-    | TString -> "string"
-    | TArrow (t1, t2) -> "(" ^ aux t1 ^ " -> " ^ aux t2 ^ ")"
-    | TVar s -> s
-    | TList t1 -> "(" ^ aux t1 ^ " list)"
-  in
-  aux t
-
-let rec string_of_tyenv tenv =
-  match tenv with
-  | (str, t) :: rest ->
-      Printf.sprintf "%s :: %s, " str (string_of_ty t) ^ string_of_tyenv rest
-  | [] -> ""
-
-let rec string_of_tysubst (tsubst : (tyvar * ty) list) =
-  match tsubst with
-  | (tyv, t) :: rest ->
-      Printf.sprintf "%s :: %s, " tyv (string_of_ty t) ^ string_of_tysubst rest
-  | [] -> ""
+open Types
 
 let theta0 = ([] : tysubst)
 let new_typevar n = (TVar ("'a" ^ string_of_int n), n + 1)
@@ -69,6 +31,7 @@ let rec subst_ty theta t =
   | TArrow (t2, t3) -> TArrow (subst_ty theta t2, subst_ty theta t3)
   | TVar s -> subst_ty1 theta s
   | TList t1 -> TList (subst_ty theta t1)
+  | TInvalid -> TInvalid
 
 let subst_tyenv theta te = List.map (fun (x, t) -> (x, subst_ty theta t)) te
 
@@ -116,69 +79,90 @@ let unify eql =
   solve eql []
 
 let tinf e =
-  let rec aux te e n =
+  let rec aux_binops te e1 e2 n =
+    let te1, t1, theta1, n1, e1 = aux te e1 n in
+    let te2, t2, theta2, n2, e2 = aux te1 e2 n1 in
+    let t11 = subst_ty theta2 t1 in
+    let theta3 = unify [ (t11, TInt); (t2, TInt) ] in
+    let te3 = subst_tyenv theta3 te2 in
+    let theta4 = compose_subst theta3 (compose_subst theta2 theta1) in
+    (te3, theta4, n2, e1, e2)
+  and aux te e n =
     match e with
-    | IntLit _ -> (te, TInt, theta0, n)
-    | StringLit _ -> (te, TString, theta0, n)
-    | List [] ->
+    | IntLit (_, num) -> (te, TInt, theta0, n, IntLit (TInt, num))
+    | StringLit (_, s) -> (te, TString, theta0, n, StringLit (TString, s))
+    | List (_, []) ->
         let t, new_n = new_typevar n in
-        (te, TList t, theta0, new_n)
-    | List (h :: tl) ->
-        let te1, t1, theta1, n1 = aux te h n in
-        let te2, types, theta2, n2 =
+        (te, TList t, theta0, new_n, List (TList t, []))
+    | List (_, h :: tl) ->
+        let te1, t1, theta1, n1, e1 = aux te h n in
+        let te2, types, theta2, n2, elist =
           List.fold_left
-            (fun (te_acc, t_acc, theta_acc, n_acc) e ->
-              let te_next, t_next, theta_next, n_next = aux te_acc e n_acc in
+            (fun (te_acc, t_acc, theta_acc, n_acc, e_acc) e ->
+              let te_next, t_next, theta_next, n_next, e_next =
+                aux te_acc e n_acc
+              in
               let t_next' = subst_ty theta_next t_next in
               let theta_acc' = compose_subst theta_next theta_acc in
               ( subst_tyenv theta_acc' te_next,
                 t_acc @ [ t_next' ],
                 theta_acc',
-                n_next ))
-            (te1, [], theta0, n1) tl
+                n_next,
+                e_acc @ [ e_next ] ))
+            (te1, [], theta0, n1, []) tl
         in
         let _ = List.iter (fun t -> ignore (unify [ (t1, t) ])) types in
         let t11 = subst_ty theta2 t1 in
         let theta3 = unify [ (t11, t1) ] in
         let te3 = subst_tyenv theta3 te2 in
         let theta4 = compose_subst theta3 (compose_subst theta2 theta1) in
-        (te3, TList t11, theta4, n2)
-    | Cons (h, tl) ->
-        let te1, t1, theta1, n1 = aux te h n in
-        let te2, t2, theta2, n2 = aux te1 tl n1 in
+        (te3, TList t11, theta4, n2, List (TList t11, e1 :: elist))
+    | Cons (_, h, tl) ->
+        let te1, t1, theta1, n1, e1 = aux te h n in
+        let te2, t2, theta2, n2, e2 = aux te1 tl n1 in
         let t11 = subst_ty theta2 t1 in
         let theta3 = unify [ (t2, TList t11) ] in
         let te3 = subst_tyenv theta3 te2 in
         let theta4 = compose_subst theta3 (compose_subst theta2 theta1) in
-        (te3, TList t11, theta4, n2)
-    | Append (l1, l2) ->
-        let te1, t1, theta1, n1 = aux te l1 n in
-        let te2, t2, theta2, n2 = aux te1 l2 n1 in
+        (te3, TList t11, theta4, n2, Cons (TList t11, e1, e2))
+    | Append (_, l1, l2) ->
+        let te1, t1, theta1, n1, e1 = aux te l1 n in
+        let te2, t2, theta2, n2, e2 = aux te1 l2 n1 in
         let t11 = subst_ty theta2 t1 in
         let theta3 = unify [ (t2, t11) ] in
         let te3 = subst_tyenv theta3 te2 in
         let theta4 = compose_subst theta3 (compose_subst theta2 theta1) in
-        (te3, t2, theta4, n2)
-    | Plus (e1, e2) | Minus (e1, e2) | Times (e1, e2) | Div (e1, e2) ->
-        let te1, t1, theta1, n1 = aux te e1 n in
-        let te2, t2, theta2, n2 = aux te1 e2 n1 in
+        (te3, t2, theta4, n2, Append (t2, e1, e2))
+    | Plus (_, e1, e2) ->
+        let te1, theta1, n1, e1, e2 = aux_binops te e1 e2 n in
+        (te1, TInt, theta1, n1, Plus (TInt, e1, e2))
+    | Minus (_, e1, e2) ->
+        let te1, theta1, n1, e1, e2 = aux_binops te e1 e2 n in
+        (te1, TInt, theta1, n1, Minus (TInt, e1, e2))
+    | Times (_, e1, e2) ->
+        let te1, theta1, n1, e1, e2 = aux_binops te e1 e2 n in
+        (te1, TInt, theta1, n1, Times (TInt, e1, e2))
+    | Div (_, e1, e2) ->
+        let te1, theta1, n1, e1, e2 = aux_binops te e1 e2 n in
+        (te1, TInt, theta1, n1, Div (TInt, e1, e2))
+    | Less (_, e1, e2) ->
+        let te1, theta1, n1, e1, e2 = aux_binops te e1 e2 n in
+        (te1, TBool, theta1, n1, Less (TInt, e1, e2))
+    | Greater (_, e1, e2) ->
+        let te1, theta1, n1, e1, e2 = aux_binops te e1 e2 n in
+        (te1, TBool, theta1, n1, Greater (TInt, e1, e2))
+    | Eq (_, e1, e2) ->
+        let te1, t1, theta1, n1, e1 = aux te e1 n in
+        let te2, t2, theta2, n2, e2 = aux te1 e2 n1 in
         let t11 = subst_ty theta2 t1 in
-        let theta3 = unify [ (t11, TInt); (t2, TInt) ] in
+        let theta3 = unify [ (t11, t2) ] in
         let te3 = subst_tyenv theta3 te2 in
         let theta4 = compose_subst theta3 (compose_subst theta2 theta1) in
-        (te3, TInt, theta4, n2)
-    | Eq (e1, e2) | Less (e1, e2) | Greater (e1, e2) ->
-        let te1, t1, theta1, n1 = aux te e1 n in
-        let te2, t2, theta2, n2 = aux te1 e2 n1 in
-        let t11 = subst_ty theta2 t1 in
-        let theta3 = unify [ (t11, TInt); (t2, TInt) ] in
-        let te3 = subst_tyenv theta3 te2 in
-        let theta4 = compose_subst theta3 (compose_subst theta2 theta1) in
-        (te3, TBool, theta4, n2)
-    | If (e1, e2, e3) ->
-        let te1, t1, theta1, n1 = aux te e1 n in
-        let te2, t2, theta2, n2 = aux te1 e2 n1 in
-        let te3, t3, theta3, n3 = aux te2 e3 n2 in
+        (te3, TBool, theta4, n2, Eq (TBool, e1, e2))
+    | If (_, e1, e2, e3) ->
+        let te1, t1, theta1, n1, e1 = aux te e1 n in
+        let te2, t2, theta2, n2, e2 = aux te1 e2 n1 in
+        let te3, t3, theta3, n3, e3 = aux te2 e3 n2 in
         let t11 = subst_ty theta3 t1 in
         let theta4 = unify [ (t11, TBool); (t2, t3) ] in
         let te4 = subst_tyenv theta4 te3 in
@@ -186,8 +170,8 @@ let tinf e =
           compose_subst theta4
             (compose_subst theta3 (compose_subst theta2 theta1))
         in
-        (te4, t2, theta5, n3)
-    | Let (name, params, value, body) ->
+        (te4, t2, theta5, n3, If (t2, e1, e2, e3))
+    | Let (_, name, params, value, body) ->
         let param_types, n1 =
           List.fold_right
             (fun _ (types, n) ->
@@ -200,17 +184,17 @@ let tinf e =
             (fun te param t -> (param, t) :: te)
             te params param_types
         in
-        let te2, t_value, theta1, n2 = aux te1 value n1 in
+        let te2, t_value, theta1, n2, e1 = aux te1 value n1 in
         let t_func =
           List.fold_right
             (fun t_arg t_acc -> TArrow (t_arg, t_acc))
             param_types t_value
         in
         let te3 = (name, t_func) :: subst_tyenv theta1 te2 in
-        let te4, t_body, theta2, n3 = aux te3 body n2 in
+        let te4, t_body, theta2, n3, e2 = aux te3 body n2 in
         let theta3 = compose_subst theta2 theta1 in
-        (te4, t_body, theta3, n3)
-    | LetRec (name, params, value, body) ->
+        (te4, t_body, theta3, n3, Let (t_body, name, params, e1, e2))
+    | LetRec (_, name, params, value, body) ->
         let param_types, n1 =
           List.fold_right
             (fun _ (types, n) ->
@@ -230,29 +214,32 @@ let tinf e =
             (fun te param t -> (param, t) :: te)
             te1 params param_types
         in
-        let te3, t_value, theta1, n3 = aux te2 value n2 in
+        let te3, t_value, theta1, n3, e3 = aux te2 value n2 in
         let theta_func = unify [ (t_ret, t_value) ] in
         let te4 = subst_tyenv theta_func te3 in
         let theta2 = compose_subst theta_func theta1 in
-        let te5, t_body, theta3, n4 = aux te4 body n3 in
+        let te5, t_body, theta3, n4, e4 = aux te4 body n3 in
         let theta4 = compose_subst theta3 theta2 in
-        (te5, t_body, theta4, n4)
-    | App (func_name, args) ->
+        (te5, t_body, theta4, n4, LetRec (t_body, name, params, e3, e4))
+    | App (_, func_name, args) ->
         let t_func =
           try List.assoc func_name te
           with Not_found -> failwith ("Unknown function: " ^ func_name)
         in
-        let te', arg_types, theta', n' =
+        let te', arg_types, theta', n', e' =
           List.fold_left
-            (fun (te_acc, types_acc, theta_acc, n_acc) arg ->
-              let te_next, t_arg, theta_next, n_next = aux te_acc arg n_acc in
+            (fun (te_acc, types_acc, theta_acc, n_acc, e_acc) arg ->
+              let te_next, t_arg, theta_next, n_next, e_next =
+                aux te_acc arg n_acc
+              in
               let t_arg' = subst_ty theta_acc t_arg in
               let theta_acc' = compose_subst theta_next theta_acc in
               ( subst_tyenv theta_acc' te_next,
                 types_acc @ [ t_arg' ],
                 theta_acc',
-                n_next ))
-            (te, [], theta0, n) args
+                n_next,
+                e_acc @ [ e_next ] ))
+            (te, [], theta0, n, []) args
         in
         let t_ret, n2 = new_typevar n' in
         let t_func_expected =
@@ -263,23 +250,28 @@ let tinf e =
         let theta_func = unify [ (t_func, t_func_expected) ] in
         let te_final = subst_tyenv theta_func te' in
         let theta_final = compose_subst theta_func theta' in
-        (te_final, subst_ty theta_final t_ret, theta_final, n2)
-    | Sequence exprs ->
+        ( te_final,
+          subst_ty theta_final t_ret,
+          theta_final,
+          n2,
+          App (t_ret, func_name, e') )
+    | Sequence (_, exprs) ->
         let rec aux_sequence te exprs n =
           match exprs with
-          | [] -> (te, TUnit, theta0, n)
+          | [] -> (te, TUnit, theta0, n, Sequence (TUnit, []))
           | [ e ] -> aux te e n
           | e :: rest ->
-              let te1, t1, theta1, n1 = aux te e n in
+              let te1, t1, theta1, n1, e1 = aux te e n in
               let te2 = unify [ (t1, TUnit) ] in
               let te3 = subst_tyenv te2 te1 in
-              let te4, t2, theta2, n2 = aux_sequence te3 rest n1 in
-              (te4, t2, compose_subst theta2 theta1, n2)
+              let te4, t2, theta2, n2, e2 = aux_sequence te3 rest n1 in
+              let e3 = Sequence (t2, [ e1 ] @ [ e2 ]) in
+              (te4, t2, compose_subst theta2 theta1, n2, e3)
         in
         aux_sequence te exprs n
     | rest -> failwith ("not implemented: " ^ string_of_ast rest)
   in
-  let t1, t2, t3, t4 =
+  let t1, t2, t3, t4, t5 =
     aux
       [
         ("print_int32", TArrow (TInt, TUnit));
@@ -294,4 +286,4 @@ let tinf e =
       ]
       e 1
   in
-  (t1, t2, t3, t4)
+  (t1, t2, t3, t4, t5)

@@ -1,6 +1,7 @@
 open Ast
 open Builtin
 open Inferer
+open Types
 open Runtime.Instructions
 open Runtime.Modules
 open Runtime.Wasi
@@ -64,10 +65,10 @@ let codegen ast te =
       aux func_name funcs (Env.add name (rand_name, Func) env) body addr
     in
     match expr with
-    | IntLit n ->
+    | IntLit (_, n) ->
         let func = Funcs.find func_name funcs in
         (Funcs.add func_name { func with body = [ I32Const n ] } funcs, addr)
-    | StringLit s ->
+    | StringLit (_, s) ->
         let func = Funcs.find func_name funcs in
         let start_addr = addr in
         let new_func_body, addr =
@@ -80,7 +81,7 @@ let codegen ast te =
         in
         let new_func_body = new_func_body @ [ I32Const start_addr ] in
         (Funcs.add func_name { func with body = new_func_body } funcs, addr)
-    | List lst ->
+    | List (_, lst) ->
         let func = Funcs.find func_name funcs in
         let funcs, lst_instrs, end_addr =
           List.fold_left
@@ -104,7 +105,7 @@ let codegen ast te =
         let head_addr = if List.length lst = 0 then -1 else addr in
         let new_func_body = lst_instrs @ [ I32Const head_addr ] in
         (Funcs.add func_name { func with body = new_func_body } funcs, end_addr)
-    | Cons (cons, lst) ->
+    | Cons (_, cons, lst) ->
         let func = Funcs.find func_name funcs in
         let lst_funcs, addr = aux func_name funcs env lst addr in
         let lst_expr_instr = (Funcs.find func_name lst_funcs).body in
@@ -124,7 +125,7 @@ let codegen ast te =
         in
         ( Funcs.add func_name { func with body = new_func_body } funcs,
           next_addr + 4 )
-    | Append (lst1, lst2) ->
+    | Append (_, lst1, lst2) ->
         let func = Funcs.find func_name funcs in
         let lst1_funcs, lst2_addr = aux func_name funcs env lst1 addr in
         let lst1_expr_instr = (Funcs.find func_name lst1_funcs).body in
@@ -155,7 +156,7 @@ let codegen ast te =
         in
         ( Funcs.add func_name { func with body = new_func_body } lst2_funcs,
           lst_result_addr )
-    | App (name, args) ->
+    | App (_, name, args) ->
         let func = Funcs.find func_name funcs in
         let funcs, args_instrs, end_addr =
           List.fold_left
@@ -176,7 +177,7 @@ let codegen ast te =
           | Arg -> args_instrs @ [ LocalGet wat_name ]
         in
         (Funcs.add func_name { func with body = new_func_body } funcs, end_addr)
-    | Sequence exprs ->
+    | Sequence (_, exprs) ->
         let func = Funcs.find func_name funcs in
         let funcs, exprs_instrs, end_addr =
           List.fold_left
@@ -187,18 +188,26 @@ let codegen ast te =
             (funcs, [], addr) exprs
         in
         (Funcs.add func_name { func with body = exprs_instrs } funcs, end_addr)
-    | If (cond, then_, else_) -> aux_if cond then_ else_ addr
-    | Let (name, params, value, body) ->
+    | If (_, cond, then_, else_) -> aux_if cond then_ else_ addr
+    | Let (_, name, params, value, body) ->
         aux_let name params value body false addr
-    | LetRec (name, params, value, body) ->
+    | LetRec (_, name, params, value, body) ->
         aux_let name params value body true addr
-    | Plus (left, right) -> aux_binops left right I32Add addr
-    | Minus (left, right) -> aux_binops left right I32Sub addr
-    | Times (left, right) -> aux_binops left right I32Mul addr
-    | Div (left, right) -> aux_binops left right I32DivS addr
-    | Eq (left, right) -> aux_binops left right I32Eq addr
-    | Greater (left, right) -> aux_binops left right I32GtU addr
-    | Less (left, right) -> aux_binops left right I32LtU addr
+    | Plus (_, left, right) -> aux_binops left right I32Add addr
+    | Minus (_, left, right) -> aux_binops left right I32Sub addr
+    | Times (_, left, right) -> aux_binops left right I32Mul addr
+    | Div (_, left, right) -> aux_binops left right I32DivS addr
+    | Eq (_, left, right) ->
+        let left_funcs, addr = aux func_name funcs env left addr in
+        let left = (Funcs.find func_name left_funcs).body in
+        let right_funcs, addr = aux func_name left_funcs env right addr in
+        let func = Funcs.find func_name right_funcs in
+        let right = func.body in
+        let new_func_body = left @ right @ [ I32Eq ] in
+        let new_func = { func with body = new_func_body } in
+        (Funcs.add func_name new_func right_funcs, addr)
+    | Greater (_, left, right) -> aux_binops left right I32GtU addr
+    | Less (_, left, right) -> aux_binops left right I32LtU addr
     | rest ->
         raise
           (CodegenError

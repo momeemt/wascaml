@@ -15,7 +15,7 @@ let rec find_project_root current_dir =
 let exec_code code test_name =
   let tokens = tokenize code in
   let ast = parse tokens in
-  let te, _, _, _ = tinf ast in
+  let te, _, _, _, _ = tinf ast in
   let wat = codegen ast te in
   let filename =
     find_project_root (Sys.getcwd ())
@@ -60,6 +60,20 @@ let () =
       ("times_1", [ test_case "times_1" "print_int32 (8 * 5)" 40 ]);
       ("div_1", [ test_case "div_1" "print_int32 (49 / 7)" 7 ]);
       ("binops_1", [ test_case "binops_1" "print_int32 (12 + 3 * 5)" 27 ]);
+      ( "equal_int_1",
+        [ test_case "equal_int_1" "print_int32 (if 0 = 0 then 1 else 2)" 1 ] );
+      ( "equal_int_2",
+        [ test_case "equal_int_2" "print_int32 (if 1 = 2 then 1 else 2)" 2 ] );
+      (* ( "equal_list_1", *)
+      (*   [ *)
+      (*     test_case "equal_list_1" *)
+      (*       "print_int32 (if [1 2 3] = [1 2 3] then 1 else 2)" 1; *)
+      (*   ] ); *)
+      (* ( "equal_list_2", *)
+      (*   [ *)
+      (*     test_case "equal_list_2" "print_int32 (if [1 2 3] = [] then 1 else 2)" *)
+      (*       2; *)
+      (*   ] ); *)
       ("if_1", [ test_case "if_1" "print_int32 (if 0 = 0 then 1 else 3)" 1 ]);
       ("if_2", [ test_case "if_2" "print_int32 (if 1 = 2 then 3 else 4)" 4 ]);
       ("if_3", [ test_case "if_3" "print_int32 (if 1 < 10 then 20 else 30)" 20 ]);
@@ -154,18 +168,26 @@ let () =
              (list_next lst) in print_int32 (get 3 [1 2 3 4])"
             4;
         ] );
-      ( "list_append_1", [
-        test_case_str "list_append_1" "print_list ([1 2] @ [3 4])" "[1, 2, 3, 4]\n"
-      ] );
-      ("list_append_2", [
-        test_case_str "list_append_2" "let x = [1 2] in print_list (x @ [3 4])" "[1, 2, 3, 4]\n"
-      ]);
-      ("list_copy_1", [
-        test_case_str "list_copy_1" "print_list (list_copy [1 2 3] 2000)" "[1, 2, 3]\n"
-      ]);
-      ("list_copy_2", [
-        test_case_str "list_copy_2" "let x = [1 2 3] in print_list (list_copy (x) 2000)" "[1, 2, 3]\n"
-      ]);
+      ( "list_append_1",
+        [
+          test_case_str "list_append_1" "print_list ([1 2] @ [3 4])"
+            "[1, 2, 3, 4]\n";
+        ] );
+      ( "list_append_2",
+        [
+          test_case_str "list_append_2"
+            "let x = [1 2] in print_list (x @ [3 4])" "[1, 2, 3, 4]\n";
+        ] );
+      ( "list_copy_1",
+        [
+          test_case_str "list_copy_1" "print_list (list_copy [1 2 3] 2000)"
+            "[1, 2, 3]\n";
+        ] );
+      ( "list_copy_2",
+        [
+          test_case_str "list_copy_2"
+            "let x = [1 2 3] in print_list (list_copy (x) 2000)" "[1, 2, 3]\n";
+        ] );
       ( "string_1",
         [
           test_case_str "string_1" "print_string \"Hello, World!\""

@@ -1,5 +1,6 @@
 open Tokens
 open Ast
+open Types
 
 exception ParseError of string
 
@@ -12,7 +13,7 @@ and parse_sequence_expr tokens =
     | SemiColon :: tokens -> aux (expr :: acc) tokens
     | _ ->
         if acc = [] then (expr, tokens)
-        else (Sequence (List.rev (expr :: acc)), tokens)
+        else (Sequence (TInvalid, List.rev (expr :: acc)), tokens)
   in
   aux [] tokens
 
@@ -26,7 +27,7 @@ and parse_let_expr tokens =
           match tokens with
           | In :: tokens ->
               let scope, tokens = parse_expr tokens in
-              (LetRec (f, args, body, scope), tokens)
+              (LetRec (TInvalid, f, args, body, scope), tokens)
           | _ -> raise (ParseError "Expected 'in'"))
       | rest -> raise (ParseError ("Expected '=': " ^ string_of_tokens rest)))
   | Let :: Identifier id :: tokens -> (
@@ -37,7 +38,7 @@ and parse_let_expr tokens =
           match tokens with
           | In :: tokens ->
               let e2, tokens = parse_expr tokens in
-              (Let (id, args, e1, e2), tokens)
+              (Let (TInvalid, id, args, e1, e2), tokens)
           | _ -> raise (ParseError "Expected 'in'"))
       | rest -> raise (ParseError ("Expected '=': " ^ string_of_tokens rest)))
   | _ -> parse_fun_expr tokens
@@ -46,7 +47,7 @@ and parse_fun_expr tokens =
   match tokens with
   | Function :: Identifier id :: Arrow :: tokens ->
       let body, tokens = parse_expr tokens in
-      (Fun (id, body), tokens)
+      (Fun (TInvalid, id, body), tokens)
   | _ -> parse_if_expr tokens
 
 and parse_if_expr tokens =
@@ -59,7 +60,7 @@ and parse_if_expr tokens =
           match tokens with
           | Else :: tokens ->
               let else_expr, tokens = parse_expr tokens in
-              (If (cond, then_expr, else_expr), tokens)
+              (If (TInvalid, cond, then_expr, else_expr), tokens)
           | _ -> raise (ParseError "Expected 'else'"))
       | _ -> raise (ParseError "Expected 'then'"))
   | _ -> parse_equal_expr tokens
@@ -69,13 +70,13 @@ and parse_equal_expr tokens =
   match tokens with
   | Equal :: tokens ->
       let rhs, tokens = parse_add_sub_expr tokens in
-      (Eq (lhs, rhs), tokens)
+      (Eq (TInvalid, lhs, rhs), tokens)
   | Less :: tokens ->
       let rhs, tokens = parse_add_sub_expr tokens in
-      (Less (lhs, rhs), tokens)
+      (Less (TInvalid, lhs, rhs), tokens)
   | Greater :: tokens ->
       let rhs, tokens = parse_add_sub_expr tokens in
-      (Greater (lhs, rhs), tokens)
+      (Greater (TInvalid, lhs, rhs), tokens)
   | _ -> (lhs, tokens)
 
 and parse_add_sub_expr tokens =
@@ -83,10 +84,10 @@ and parse_add_sub_expr tokens =
     match tokens with
     | Tokens.Plus :: tokens ->
         let rhs, tokens = parse_mul_div_expr tokens in
-        aux (Plus (acc, rhs)) tokens
+        aux (Plus (TInvalid, acc, rhs)) tokens
     | Hyphen :: tokens ->
         let rhs, tokens = parse_mul_div_expr tokens in
-        aux (Minus (acc, rhs)) tokens
+        aux (Minus (TInvalid, acc, rhs)) tokens
     | _ -> (acc, tokens)
   in
   let lhs, tokens = parse_mul_div_expr tokens in
@@ -97,10 +98,10 @@ and parse_mul_div_expr tokens =
     match tokens with
     | Asterisk :: tokens ->
         let rhs, tokens = parse_primary_expr tokens in
-        aux (Times (acc, rhs)) tokens
+        aux (Times (TInvalid, acc, rhs)) tokens
     | Slash :: tokens ->
         let rhs, tokens = parse_primary_expr tokens in
-        aux (Div (acc, rhs)) tokens
+        aux (Div (TInvalid, acc, rhs)) tokens
     | _ -> (acc, tokens)
   in
   let lhs, tokens = parse_list_ops_expr tokens in
@@ -111,10 +112,10 @@ and parse_list_ops_expr tokens =
     match tokens with
     | AtSign :: tokens ->
         let rhs, tokens = parse_expr tokens in
-        aux (Append (acc, rhs)) tokens
+        aux (Append (TInvalid, acc, rhs)) tokens
     | DoubleColon :: tokens ->
         let rhs, tokens = parse_expr tokens in
-        aux (Cons (acc, rhs)) tokens
+        aux (Cons (TInvalid, acc, rhs)) tokens
     | _ -> (acc, tokens)
   in
   let lhs, tokens = parse_primary_expr tokens in
@@ -122,12 +123,12 @@ and parse_list_ops_expr tokens =
 
 and parse_primary_expr tokens =
   match tokens with
-  | Int n :: tokens -> (IntLit n, tokens)
-  | Bool b :: tokens -> (BoolLit b, tokens)
-  | String s :: tokens -> (StringLit s, tokens)
+  | Int n :: tokens -> (IntLit (TInvalid, n), tokens)
+  | Bool b :: tokens -> (BoolLit (TInvalid, b), tokens)
+  | String s :: tokens -> (StringLit (TInvalid, s), tokens)
   | Identifier id :: tokens ->
       let args, tokens = parse_app tokens in
-      (App (id, args), tokens)
+      (App (TInvalid, id, args), tokens)
   | LeftParen :: tokens -> (
       let expr, tokens = parse_expr tokens in
       match tokens with
@@ -135,7 +136,7 @@ and parse_primary_expr tokens =
       | _ -> raise (ParseError "Expected ')'"))
   | LeftBracket :: tokens ->
       let exprs, tokens = parse_list tokens in
-      (List exprs, tokens)
+      (List (TInvalid, exprs), tokens)
   | _ -> raise (ParseError "Expected primary expression")
 
 and parse_list tokens =
